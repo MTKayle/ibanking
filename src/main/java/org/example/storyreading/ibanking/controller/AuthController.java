@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -24,10 +25,70 @@ public class AuthController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
+    @PostMapping(value = "/register-with-face", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> registerWithFace(
+            @RequestParam("phone") String phone,
+            @RequestParam("email") String email,
+            @RequestParam("password") String password,
+            @RequestParam("fullName") String fullName,
+            @RequestParam("cccdNumber") String cccdNumber,
+            @RequestParam(value = "dateOfBirth", required = false) String dateOfBirth,
+            @RequestParam(value = "permanentAddress", required = false) String permanentAddress,
+            @RequestParam(value = "temporaryAddress", required = false) String temporaryAddress,
+            @RequestPart("cccdPhoto") MultipartFile cccdPhoto,
+            @RequestPart("selfiePhoto") MultipartFile selfiePhoto) {
+
+        try {
+            // Validate file types
+            if (!isImageFile(cccdPhoto) || !isImageFile(selfiePhoto)) {
+                return ResponseEntity.badRequest()
+                        .body("Chỉ chấp nhận file ảnh (jpg, jpeg, png)");
+            }
+
+            // Validate file sizes (max 5MB each)
+            if (cccdPhoto.getSize() > 5 * 1024 * 1024 || selfiePhoto.getSize() > 5 * 1024 * 1024) {
+                return ResponseEntity.badRequest()
+                        .body("Kích thước ảnh không được vượt quá 5MB");
+            }
+
+            // Create RegisterRequest from form data
+            RegisterRequest registerRequest = new RegisterRequest();
+            registerRequest.setPhone(phone);
+            registerRequest.setEmail(email);
+            registerRequest.setPassword(password);
+            registerRequest.setFullName(fullName);
+            registerRequest.setCccdNumber(cccdNumber);
+
+            if (dateOfBirth != null && !dateOfBirth.isEmpty()) {
+                registerRequest.setDateOfBirth(java.time.LocalDate.parse(dateOfBirth));
+            }
+            registerRequest.setPermanentAddress(permanentAddress);
+            registerRequest.setTemporaryAddress(temporaryAddress);
+
+            // Call service to register with face verification
+            AuthResponse response = authService.registerWithFaceVerification(
+                    registerRequest, cccdPhoto, selfiePhoto);
+
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Đăng ký thất bại: " + e.getMessage());
+        }
+    }
+
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         AuthResponse response = authService.login(loginRequest);
         return ResponseEntity.ok(response);
     }
-}
 
+    private boolean isImageFile(MultipartFile file) {
+        String contentType = file.getContentType();
+        return contentType != null && (
+                contentType.equals("image/jpeg") ||
+                contentType.equals("image/jpg") ||
+                contentType.equals("image/png")
+        );
+    }
+}

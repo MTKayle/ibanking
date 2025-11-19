@@ -63,6 +63,10 @@ public class User {
     @Column(name = "temporary_address", length = 255)
     private String temporaryAddress;
 
+    // Photo URL - có thể null (chưa upload ảnh)
+    @Column(name = "photo_url", columnDefinition = "TEXT", nullable = true)
+    private String photoUrl;
+
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 20)
@@ -75,8 +79,8 @@ public class User {
     private Instant updatedAt;
 
     // Relationship: one user -> many ekyc photos
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<EkycPhoto> ekycPhotos = new ArrayList<>();
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+//    private List<EkycPhoto> ekycPhotos = new ArrayList<>();
 
     public enum Role {
         customer,
@@ -178,6 +182,14 @@ public class User {
         return updatedAt;
     }
 
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
+    }
+
     @PrePersist
     protected void onCreate() {
         Instant now = Instant.now();
@@ -190,24 +202,24 @@ public class User {
         this.updatedAt = Instant.now();
     }
 
-    // Ekyc photos accessors
-    public List<EkycPhoto> getEkycPhotos() {
-        return ekycPhotos;
-    }
-
-    public void setEkycPhotos(List<EkycPhoto> ekycPhotos) {
-        this.ekycPhotos = ekycPhotos != null ? ekycPhotos : new ArrayList<>();
-    }
-
-    public void addEkycPhoto(EkycPhoto photo) {
-        ekycPhotos.add(photo);
-        photo.setUser(this);
-    }
-
-    public void removeEkycPhoto(EkycPhoto photo) {
-        ekycPhotos.remove(photo);
-        photo.setUser(null);
-    }
+//    // Ekyc photos accessors
+//    public List<EkycPhoto> getEkycPhotos() {
+//        return ekycPhotos;
+//    }
+//
+//    public void setEkycPhotos(List<EkycPhoto> ekycPhotos) {
+//        this.ekycPhotos = ekycPhotos != null ? ekycPhotos : new ArrayList<>();
+//    }
+//
+//    public void addEkycPhoto(EkycPhoto photo) {
+//        ekycPhotos.add(photo);
+//        photo.setUser(this);
+//    }
+//
+//    public void removeEkycPhoto(EkycPhoto photo) {
+//        ekycPhotos.remove(photo);
+//        photo.setUser(null);
+//    }
 
     // Convenience builder-like setters
 
@@ -248,6 +260,11 @@ public class User {
 
     public User withTemporaryAddress(String addr) {
         setTemporaryAddress(addr);
+        return this;
+    }
+
+    public User withPhotoUrl(String url) {
+        setPhotoUrl(url);
         return this;
     }
 
