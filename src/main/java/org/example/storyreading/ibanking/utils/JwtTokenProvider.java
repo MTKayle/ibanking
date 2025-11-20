@@ -6,15 +6,18 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.SecurityException;
+import io.jsonwebtoken.SignatureAlgorithm;
+import org.example.storyreading.ibanking.security.CustomUserDetails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class JwtTokenProvider {
@@ -26,13 +29,30 @@ public class JwtTokenProvider {
     private long jwtExpirationMs;
 
     private SecretKey getSigningKey() {
-        byte[] keyBytes = Base64.getDecoder().decode(jwtSecret);
-        return new SecretKeySpec(keyBytes, 0, keyBytes.length, "HmacSHA256");
+        // Sử dụng secret key trực tiếp (dạng string)
+        byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        return new SecretKeySpec(keyBytes, SignatureAlgorithm.HS256.getJcaName());
     }
 
     public String generateToken(Authentication authentication) {
-        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-        return generateTokenFromPhone(userPrincipal.getUsername());
+        CustomUserDetails userPrincipal = (CustomUserDetails) authentication.getPrincipal();
+
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userId", userPrincipal.getUserId());
+        claims.put("fullName", userPrincipal.getFullName());
+        claims.put("phone", userPrincipal.getPhone());
+        claims.put("role", userPrincipal.getRole().name());
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(userPrincipal.getPhone())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
     }
 
     public String generateTokenFromPhone(String phone) {
@@ -43,23 +63,62 @@ public class JwtTokenProvider {
                 .setSubject(phone)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
-                .signWith(getSigningKey())
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public String getPhoneFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(getSigningKey().getEncoded())
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
                 .parseClaimsJws(token)
                 .getBody();
 
         return claims.getSubject();
     }
 
+    // Method to get userId from token
+    public Long getUserIdFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        Object userId = claims.get("userId");
+        if (userId instanceof Number) {
+            return ((Number) userId).longValue();
+        }
+        return null;
+    }
+
+    // Method to get fullName from token
+    public String getFullNameFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return (String) claims.get("fullName");
+    }
+
+    // Method to get role from token
+    public String getRoleFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+
+        return (String) claims.get("role");
+    }
+
     public boolean validateToken(String authToken) {
         try {
-            Jwts.parser()
-                    .setSigningKey(getSigningKey().getEncoded())
+            Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
                     .parseClaimsJws(authToken);
             return true;
         } catch (SecurityException ex) {

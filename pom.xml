@@ -116,11 +116,11 @@
 			<scope>runtime</scope>
 		</dependency>
 
-		<!-- Firebase Admin SDK -->
+		<!-- Cloudinary for image storage -->
 		<dependency>
-			<groupId>com.google.firebase</groupId>
-			<artifactId>firebase-admin</artifactId>
-			<version>9.2.0</version>
+			<groupId>com.cloudinary</groupId>
+			<artifactId>cloudinary-http44</artifactId>
+			<version>1.38.0</version>
 		</dependency>
 
 		<!-- OkHttp for calling Face++ API -->

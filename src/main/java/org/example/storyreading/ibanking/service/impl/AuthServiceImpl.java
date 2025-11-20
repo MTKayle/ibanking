@@ -4,11 +4,13 @@ import org.example.storyreading.ibanking.dto.AuthResponse;
 import org.example.storyreading.ibanking.dto.LoginRequest;
 import org.example.storyreading.ibanking.dto.RegisterRequest;
 import org.example.storyreading.ibanking.entity.User;
+import org.example.storyreading.ibanking.exception.AccountLockedException;
 import org.example.storyreading.ibanking.exception.ResourceAlreadyExistsException;
+import org.example.storyreading.ibanking.exception.ResourceNotFoundException;
 import org.example.storyreading.ibanking.repository.UserRepository;
 import org.example.storyreading.ibanking.service.AuthService;
+import org.example.storyreading.ibanking.service.CloudinaryService;
 import org.example.storyreading.ibanking.service.FaceRecognitionService;
-import org.example.storyreading.ibanking.service.FirebaseStorageService;
 import org.example.storyreading.ibanking.utils.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,9 +42,9 @@ public class AuthServiceImpl implements AuthService {
     private FaceRecognitionService faceRecognitionService;
 
     @Autowired(required = false)
-    private FirebaseStorageService firebaseStorageService;
+    private CloudinaryService cloudinaryService;
 
-    @Value("${faceplus.confidence.threshold:80.0}")
+    @Value("${faceplus.confidence.threshold:70.0}")
     private double confidenceThreshold;
 
     @Override
@@ -98,11 +100,11 @@ public class AuthServiceImpl implements AuthService {
                                                      MultipartFile selfiePhoto) throws Exception {
         // Kiểm tra service có sẵn không
         if (faceRecognitionService == null) {
-            throw new RuntimeException("Face recognition service chưa được cấu hình. Vui lòng cấu hình Face++ API key.");
+            throw new IllegalStateException("Face recognition service chưa được cấu hình. Vui lòng cấu hình Face++ API key.");
         }
 
-        if (firebaseStorageService == null) {
-            throw new RuntimeException("Firebase storage service chưa được cấu hình. Vui lòng cấu hình Firebase credentials.");
+        if (cloudinaryService == null) {
+            throw new IllegalStateException("Cloudinary service chưa được cấu hình. Vui lòng cấu hình Cloudinary credentials.");
         }
 
         // Bước 1: Kiểm tra các thông tin đã tồn tại chưa
@@ -123,7 +125,7 @@ public class AuthServiceImpl implements AuthService {
 
         double confidence = 80;
         if (confidence < confidenceThreshold) {
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     String.format("Xác thực khuôn mặt thất bại. Độ tương đồng: %.2f%% (yêu cầu >= %.2f%%)",
                             confidence, confidenceThreshold)
             );
@@ -143,14 +145,14 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
-        // Bước 4: Upload ảnh selfie lên Firebase và lưu URL
+        // Bước 4: Upload ảnh selfie lên Cloudinary và lưu URL
         try {
-            String selfieUrl = firebaseStorageService.uploadImage(selfiePhoto, savedUser.getUserId());
+            String selfieUrl = cloudinaryService.uploadImage(selfiePhoto, savedUser.getUserId());
             savedUser.setPhotoUrl(selfieUrl);
             userRepository.save(savedUser);
         } catch (Exception e) {
-            System.err.println("Warning: Failed to upload selfie to Firebase: " + e.getMessage());
-            throw new RuntimeException("Đăng ký thất bại do lỗi lưu ảnh selfie.");
+            System.err.println("Warning: Failed to upload selfie to Cloudinary: " + e.getMessage());
+            throw new IllegalStateException("Đăng ký thất bại do lỗi lưu ảnh selfie: " + e.getMessage());
         }
 
         // Bước 5: Generate JWT token
@@ -168,6 +170,15 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequest loginRequest) {
+        // Get user first to check if account is locked
+        User user = userRepository.findByPhone(loginRequest.getPhone())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with phone: " + loginRequest.getPhone()));
+
+        // Check if account is locked
+        if (user.getIsLocked() != null && user.getIsLocked()) {
+            throw new AccountLockedException("Account is locked. Please contact support.");
+        }
+
         // Authenticate user - only phone is accepted
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -180,10 +191,6 @@ public class AuthServiceImpl implements AuthService {
 
         // Generate JWT token
         String token = tokenProvider.generateToken(authentication);
-
-        // Get user details by phone only
-        User user = userRepository.findByPhone(loginRequest.getPhone())
-                .orElseThrow(() -> new RuntimeException("User not found with phone: " + loginRequest.getPhone()));
 
         return new AuthResponse(
                 token,

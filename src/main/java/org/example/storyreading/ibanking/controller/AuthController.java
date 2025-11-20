@@ -26,7 +26,7 @@ public class AuthController {
     }
 
     @PostMapping(value = "/register-with-face", consumes = {"multipart/form-data"})
-    public ResponseEntity<?> registerWithFace(
+    public ResponseEntity<AuthResponse> registerWithFace(
             @RequestParam("phone") String phone,
             @RequestParam("email") String email,
             @RequestParam("password") String password,
@@ -36,45 +36,37 @@ public class AuthController {
             @RequestParam(value = "permanentAddress", required = false) String permanentAddress,
             @RequestParam(value = "temporaryAddress", required = false) String temporaryAddress,
             @RequestPart("cccdPhoto") MultipartFile cccdPhoto,
-            @RequestPart("selfiePhoto") MultipartFile selfiePhoto) {
+            @RequestPart("selfiePhoto") MultipartFile selfiePhoto) throws Exception {
 
-        try {
-            // Validate file types
-            if (!isImageFile(cccdPhoto) || !isImageFile(selfiePhoto)) {
-                return ResponseEntity.badRequest()
-                        .body("Chỉ chấp nhận file ảnh (jpg, jpeg, png)");
-            }
-
-            // Validate file sizes (max 5MB each)
-            if (cccdPhoto.getSize() > 5 * 1024 * 1024 || selfiePhoto.getSize() > 5 * 1024 * 1024) {
-                return ResponseEntity.badRequest()
-                        .body("Kích thước ảnh không được vượt quá 5MB");
-            }
-
-            // Create RegisterRequest from form data
-            RegisterRequest registerRequest = new RegisterRequest();
-            registerRequest.setPhone(phone);
-            registerRequest.setEmail(email);
-            registerRequest.setPassword(password);
-            registerRequest.setFullName(fullName);
-            registerRequest.setCccdNumber(cccdNumber);
-
-            if (dateOfBirth != null && !dateOfBirth.isEmpty()) {
-                registerRequest.setDateOfBirth(java.time.LocalDate.parse(dateOfBirth));
-            }
-            registerRequest.setPermanentAddress(permanentAddress);
-            registerRequest.setTemporaryAddress(temporaryAddress);
-
-            // Call service to register with face verification
-            AuthResponse response = authService.registerWithFaceVerification(
-                    registerRequest, cccdPhoto, selfiePhoto);
-
-            return new ResponseEntity<>(response, HttpStatus.CREATED);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body("Đăng ký thất bại: " + e.getMessage());
+        // Validate file types
+        if (!isImageFile(cccdPhoto) || !isImageFile(selfiePhoto)) {
+            throw new IllegalArgumentException("Chỉ chấp nhận file ảnh (jpg, jpeg, png)");
         }
+
+        // Validate file sizes (max 5MB each)
+        if (cccdPhoto.getSize() > 5 * 1024 * 1024 || selfiePhoto.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("Kích thước ảnh không được vượt quá 5MB");
+        }
+
+        // Create RegisterRequest from form data
+        RegisterRequest registerRequest = new RegisterRequest();
+        registerRequest.setPhone(phone);
+        registerRequest.setEmail(email);
+        registerRequest.setPassword(password);
+        registerRequest.setFullName(fullName);
+        registerRequest.setCccdNumber(cccdNumber);
+
+        if (dateOfBirth != null && !dateOfBirth.isEmpty()) {
+            registerRequest.setDateOfBirth(java.time.LocalDate.parse(dateOfBirth));
+        }
+        registerRequest.setPermanentAddress(permanentAddress);
+        registerRequest.setTemporaryAddress(temporaryAddress);
+
+        // Call service to register with face verification
+        AuthResponse response = authService.registerWithFaceVerification(
+                registerRequest, cccdPhoto, selfiePhoto);
+
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
