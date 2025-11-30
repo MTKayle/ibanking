@@ -5,6 +5,7 @@ import org.example.storyreading.ibanking.dto.LoginRequest;
 import org.example.storyreading.ibanking.dto.RegisterRequest;
 import org.example.storyreading.ibanking.entity.User;
 import org.example.storyreading.ibanking.exception.AccountLockedException;
+import org.example.storyreading.ibanking.exception.FaceAuthenticationFailedException;
 import org.example.storyreading.ibanking.exception.ResourceAlreadyExistsException;
 import org.example.storyreading.ibanking.exception.ResourceNotFoundException;
 import org.example.storyreading.ibanking.repository.UserRepository;
@@ -121,11 +122,11 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Bước 2: Gọi Face++ API để so sánh khuôn mặt
-//        double confidence = faceRecognitionService.compareFaces(cccdPhoto, selfiePhoto);
+        double confidence = faceRecognitionService.compareFaces(cccdPhoto, selfiePhoto);
 
-        double confidence = 80;
+//        double confidence = 80;
         if (confidence < confidenceThreshold) {
-            throw new IllegalArgumentException(
+            throw new FaceAuthenticationFailedException(
                     String.format("Xác thực khuôn mặt thất bại. Độ tương đồng: %.2f%% (yêu cầu >= %.2f%%)",
                             confidence, confidenceThreshold)
             );
@@ -191,6 +192,65 @@ public class AuthServiceImpl implements AuthService {
 
         // Generate JWT token
         String token = tokenProvider.generateToken(authentication);
+
+        return new AuthResponse(
+                token,
+                user.getUserId(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getPhone(),
+                user.getRole().name()
+        );
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse loginWithFaceRecognition(String phone, MultipartFile facePhoto) throws Exception {
+        // Kiểm tra service có sẵn không
+        if (faceRecognitionService == null) {
+            throw new IllegalStateException("Face recognition service chưa được cấu hình. Vui lòng cấu hình Face++ API key.");
+        }
+
+        // Bước 1: Tìm user theo phone
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với số điện thoại: " + phone));
+
+        // Bước 2: Kiểm tra account có bị khóa không
+        if (user.getIsLocked() != null && user.getIsLocked()) {
+            throw new AccountLockedException("Tài khoản đã bị khóa. Vui lòng liên hệ hỗ trợ.");
+        }
+
+        // Bước 3: Kiểm tra face_recognition_enabled
+        if (user.getFaceRecognitionEnabled() == null || !user.getFaceRecognitionEnabled()) {
+            throw new IllegalStateException("Tính năng đăng nhập bằng khuôn mặt chưa được kích hoạt cho tài khoản này. Vui lòng kích hoạt trong cài đặt.");
+        }
+
+        // Bước 4: Kiểm tra user đã có photoUrl chưa
+        if (user.getPhotoUrl() == null || user.getPhotoUrl().isEmpty()) {
+            throw new IllegalStateException("Tài khoản chưa có ảnh khuôn mặt đã lưu. Vui lòng đăng ký lại với xác thực khuôn mặt.");
+        }
+
+        // Bước 5: So sánh khuôn mặt với photoUrl (gọi Face++ API)
+        double confidence = faceRecognitionService.compareFaceWithUrl(facePhoto, user.getPhotoUrl());
+
+        // Bước 6: Kiểm tra confidence threshold
+        if (confidence < confidenceThreshold) {
+            throw new FaceAuthenticationFailedException(
+                    String.format("Xác thực khuôn mặt thất bại. Độ tương đồng: %.2f%% (yêu cầu >= %.2f%%)",
+                            confidence, confidenceThreshold)
+            );
+        }
+
+        // Bước 7: Tạo authentication token (không cần password vì đã xác thực bằng face)
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                user.getPhone(),
+                null,
+                org.springframework.security.core.authority.AuthorityUtils.createAuthorityList("ROLE_" + user.getRole().name().toUpperCase())
+        );
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        // Bước 8: Generate JWT token
+        String token = tokenProvider.generateTokenFromPhone(user.getPhone());
 
         return new AuthResponse(
                 token,

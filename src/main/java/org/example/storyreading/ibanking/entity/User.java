@@ -81,6 +81,13 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "smart_ekyc_enabled", nullable = false)
+    private Boolean smartEkycEnabled = false;
+    @Column(name =  "face_recognition_enabled", nullable = false)
+    private Boolean faceRecognitionEnabled = false;
+    @Column(name = "smat_OTP")
+    private String smatOTP;
+
     // Relationship: one user -> many ekyc photos
 //    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 //    private List<EkycPhoto> ekycPhotos = new ArrayList<>();
@@ -199,6 +206,31 @@ public class User {
 
     public void setPhotoUrl(String photoUrl) {
         this.photoUrl = photoUrl;
+    }
+
+    // Add getters/setters for smartEkycEnabled, faceRecognitionEnabled and smatOTP
+    public Boolean getSmartEkycEnabled() {
+        return smartEkycEnabled;
+    }
+
+    public void setSmartEkycEnabled(Boolean smartEkycEnabled) {
+        this.smartEkycEnabled = smartEkycEnabled;
+    }
+
+    public Boolean getFaceRecognitionEnabled() {
+        return faceRecognitionEnabled;
+    }
+
+    public void setFaceRecognitionEnabled(Boolean faceRecognitionEnabled) {
+        this.faceRecognitionEnabled = faceRecognitionEnabled;
+    }
+
+    public String getSmatOTP() {
+        return smatOTP;
+    }
+
+    public void setSmatOTP(String smatOTP) {
+        this.smatOTP = smatOTP;
     }
 
     @PrePersist

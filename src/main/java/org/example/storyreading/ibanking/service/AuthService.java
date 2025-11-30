@@ -14,4 +14,6 @@ public interface AuthService {
                                               MultipartFile selfiePhoto) throws Exception;
 
     AuthResponse login(LoginRequest loginRequest);
+
+    AuthResponse loginWithFaceRecognition(String phone, MultipartFile facePhoto) throws Exception;
 }

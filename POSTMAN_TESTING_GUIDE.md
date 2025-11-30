@@ -1,27 +1,45 @@
-# Hướng Dẫn Test API Quản Lý User trên Postman
+# Postman Testing Guide for iBanking Backend
 
-## Bước 1: Chuẩn bị dữ liệu
+This guide explains how to test all APIs added/updated in this project using Postman (or curl). It covers user registration (normal and with face verification), login (password and face), user settings (smart eKYC, face recognition), smart OTP update, and admin user management endpoints.
 
-### 1.1. Tạo tài khoản OFFICER để test
-Có 2 cách:
+## Base URL
 
-**Cách 1: Thông qua Database (Khuyến nghị)**
-```sql
--- Đăng ký 1 tài khoản customer trước, sau đó update role thành officer
-UPDATE users SET role = 'officer' WHERE phone = '0987654321';
-```
+- Default: `http://localhost:8080`
+- Use a Postman Environment variable `base_url` with value `http://localhost:8080`.
 
-**Cách 2: Đăng ký và thay đổi trực tiếp trong database**
-1. Đăng ký tài khoản mới qua API `/api/auth/register`
-2. Vào database và chạy câu lệnh SQL ở trên
+## Environment variables (create a Postman Environment)
+
+- base_url = http://localhost:8080
+- customer_token =
+- officer_token =
+- test_phone_customer = 0123456789
+- test_phone_officer = 0987654321
+- test_user_id_customer = 1
+
+## Notes before testing
+
+- Make sure the application is running (mvn spring-boot:run or run from your IDE).
+- Configure Face++ and Cloudinary in `src/main/resources/application.properties` if you want to test face features live:
+  - `faceplus.api.key`, `faceplus.api.secret`, `faceplus.api.url`
+  - `cloudinary` credentials if used
+- `faceplus.confidence.threshold` default is 70.0 (percent).
+- You can create an OFFICER user by registering normally then updating DB to set role = 'officer', or by creating an account and updating role via SQL.
+
+## Quick flow overview (recommended order)
+
+1. Register a CUSTOMER (`/api/auth/register`) or register-with-face (`/api/auth/register-with-face`) which also stores selfie to Cloudinary.
+2. Login with password (`/api/auth/login`) to get a token.
+3. As the user, enable face recognition and smart eKYC (PATCH `/api/users/{userId}/settings`).
+4. Upload a selfie and call `/api/auth/login-with-face` to log in by face.
+5. Use OFFICER token to call admin endpoints (GET `/api/users`, lock/unlock users, update user info).
+6. Update smart OTP via PATCH `/api/users/{userId}/smart-otp` (only allowed when smartEkycEnabled = true).
 
 ---
 
-## Bước 2: Đăng ký tài khoản test
+## 1) Register (normal)
 
-### Test Account 1 (CUSTOMER)
 ```http
-POST http://localhost:8080/api/auth/register
+POST {{base_url}}/api/auth/register
 Content-Type: application/json
 
 {
@@ -31,186 +49,51 @@ Content-Type: application/json
   "email": "nguyenvana@gmail.com",
   "cccdNumber": "001234567890",
   "dateOfBirth": "1990-01-15",
-  "permanentAddress": "123 ABC Street, District 1, HCMC",
-  "temporaryAddress": "456 XYZ Street, District 2, HCMC"
+  "permanentAddress": "123 ABC St",
+  "temporaryAddress": "456 XYZ St"
 }
 ```
 
-### Test Account 2 (OFFICER - sau khi update role trong database)
-```http
-POST http://localhost:8080/api/auth/register
-Content-Type: application/json
+**Expected:** 201 Created with AuthResponse JSON containing token and user info.
 
-{
-  "phone": "0987654321",
-  "password": "officer123",
-  "fullName": "Tran Thi B",
-  "email": "tranthib@gmail.com",
-  "cccdNumber": "009876543210",
-  "dateOfBirth": "1985-05-20",
-  "permanentAddress": "789 DEF Street, District 3, HCMC",
-  "temporaryAddress": "321 GHI Street, District 4, HCMC"
-}
-```
+**Save token:** copy the `token` from response to `customer_token` environment variable.
 
-**Sau đó chạy SQL:**
-```sql
-UPDATE users SET role = 'officer' WHERE phone = '0987654321';
-```
+**Notes:**
+- The project uses phone as primary login identifier. Username isn't used.
+- `photoUrl` will be null for normal registration.
 
 ---
 
-## Bước 3: Test Login và lấy Token
+## 2) Register with face verification (register-with-face)
 
-### 3.1. Login với CUSTOMER
 ```http
-POST http://localhost:8080/api/auth/login
-Content-Type: application/json
+POST {{base_url}}/api/auth/register-with-face
+Content-Type: multipart/form-data
 
-{
-  "phone": "0123456789",
-  "password": "password123"
-}
+phone=0123456789
+email=nguyenvana@gmail.com
+password=password123
+fullName=Nguyen Van A
+cccdNumber=001234567890
+dateOfBirth=1990-01-15
+permanentAddress=123 ABC St
+temporaryAddress=456 XYZ St
+cccdPhoto=@C:\path\to\cccd.jpg
+selfiePhoto=@C:\path\to\selfie.jpg
 ```
 
-**Response:**
-```json
-{
-  "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjEsImZ1bGxOYW1lIjoiTmd1eWVuIFZhbiBBIiwicGhvbmUiOiIwMTIzNDU2Nzg5Iiwicm9sZSI6ImN1c3RvbWVyIiwic3ViIjoiMDEyMzQ1Njc4OSIsImlhdCI6MTcwMDU2MDAwMCwiZXhwIjoxNzAwNjQ2NDAwfQ...",
-  "userId": 1,
-  "email": "nguyenvana@gmail.com",
-  "fullName": "Nguyen Van A",
-  "phone": "0123456789",
-  "role": "customer"
-}
-```
-
-**Lưu token này vào biến môi trường Postman:**
-- Variable name: `customer_token`
-- Value: Copy toàn bộ accessToken
-
-### 3.2. Login với OFFICER
-```http
-POST http://localhost:8080/api/auth/login
-Content-Type: application/json
-
-{
-  "phone": "0987654321",
-  "password": "officer123"
-}
-```
-
-**Lưu token vào biến:**
-- Variable name: `officer_token`
-- Value: Copy toàn bộ accessToken
+**Behavior:**
+- The server will call Face++ to compare cccdPhoto and selfiePhoto.
+- If match confidence < threshold (default 70), registration fails.
+- On success, selfie is uploaded to Cloudinary and `photoUrl` is saved to user.
+- Response: 201 Created with AuthResponse (token + user info).
 
 ---
 
-## Bước 4: Test API Quản Lý User
-
-### 4.1. Test với CUSTOMER (Sẽ bị từ chối - 403 Forbidden)
+## 3) Login (password)
 
 ```http
-GET http://localhost:8080/api/users
-Authorization: Bearer {{customer_token}}
-```
-
-**Expected Response: 403 Forbidden**
-```json
-{
-  "timestamp": "2025-11-21T00:50:00.000+00:00",
-  "status": 403,
-  "error": "Forbidden",
-  "path": "/api/users"
-}
-```
-
-### 4.2. Test với OFFICER (Thành công)
-
-#### A. Lấy danh sách tất cả user
-```http
-GET http://localhost:8080/api/users
-Authorization: Bearer {{officer_token}}
-```
-
-**Expected Response: 200 OK**
-```json
-[
-  {
-    "userId": 1,
-    "fullName": "Nguyen Van A",
-    "email": "nguyenvana@gmail.com",
-    "phone": "0123456789",
-    "dateOfBirth": "1990-01-15",
-    "cccdNumber": "001234567890",
-    "permanentAddress": "123 ABC Street, District 1, HCMC",
-    "temporaryAddress": "456 XYZ Street, District 2, HCMC",
-    "photoUrl": null,
-    "role": "customer",
-    "isLocked": false,
-    "createdAt": "2025-11-20T10:00:00Z",
-    "updatedAt": "2025-11-20T10:00:00Z"
-  }
-]
-```
-
-#### B. Lấy thông tin user theo ID
-```http
-GET http://localhost:8080/api/users/1
-Authorization: Bearer {{officer_token}}
-```
-
-#### C. Cập nhật thông tin user
-```http
-PUT http://localhost:8080/api/users/1
-Authorization: Bearer {{officer_token}}
-Content-Type: application/json
-
-{
-  "fullName": "Nguyen Van A Updated",
-  "email": "nguyenvana.updated@gmail.com",
-  "permanentAddress": "New Address 999"
-}
-```
-
-**Expected Response: 200 OK** (Trả về user đã update)
-
-#### D. Khóa tài khoản user
-```http
-PATCH http://localhost:8080/api/users/1/lock
-Authorization: Bearer {{officer_token}}
-Content-Type: application/json
-
-{
-  "locked": true
-}
-```
-
-**Expected Response: 200 OK**
-```json
-{
-  "userId": 1,
-  "fullName": "Nguyen Van A Updated",
-  "email": "nguyenvana.updated@gmail.com",
-  "phone": "0123456789",
-  "dateOfBirth": "1990-01-15",
-  "cccdNumber": "001234567890",
-  "permanentAddress": "New Address 999",
-  "temporaryAddress": "456 XYZ Street, District 2, HCMC",
-  "photoUrl": null,
-  "role": "customer",
-  "isLocked": true,
-  "createdAt": "2025-11-20T10:00:00Z",
-  "updatedAt": "2025-11-21T00:55:00Z"
-}
-```
-
----
-
-## Bước 5: Test Login với tài khoản bị khóa
-
-```http
-POST http://localhost:8080/api/auth/login
+POST {{base_url}}/api/auth/login
 Content-Type: application/json
 
 {
@@ -219,95 +102,141 @@ Content-Type: application/json
 }
 ```
 
-**Expected Response: 423 Locked**
-```json
-{
-  "status": 423,
-  "message": "Account is locked. Please contact support.",
-  "timestamp": "2025-11-21T00:56:00.123"
-}
+**Response:** 200 OK with AuthResponse (token, userId, email, fullName, phone, role)
+
+**Save token** to `customer_token` (or `officer_token` for officer account).
+
+---
+
+## 4) Login with face (face recognition)
+
+```http
+POST {{base_url}}/api/auth/login-with-face
+Content-Type: multipart/form-data
+
+phone=0123456789
+facePhoto=@C:\path\to\selfie.jpg
+```
+
+**Behavior:**
+- The endpoint checks: user exists, not locked, `faceRecognitionEnabled` == true, and `photoUrl` is set.
+- It calls Face++ to compare uploaded face with stored `photoUrl`.
+- If confidence >= threshold (default 70) returns AuthResponse (token + user info).
+- Else returns an error (authentication failed).
+
+**Example curl (Windows cmd):**
+
+```cmd
+curl -X POST "http://localhost:8080/api/auth/login-with-face" ^
+  -H "Content-Type: multipart/form-data" ^
+  -F "phone=0123456789" ^
+  -F "facePhoto=@C:\\path\\to\\selfie.jpg"
 ```
 
 ---
 
-## Bước 6: Mở khóa tài khoản
+## 5) Update user settings (enable/disable smart eKYC and face recognition)
 
 ```http
-PATCH http://localhost:8080/api/users/1/lock
-Authorization: Bearer {{officer_token}}
+PATCH {{base_url}}/api/users/{userId}/settings
+Authorization: Bearer {{customer_token}} (or {{officer_token}})
 Content-Type: application/json
 
 {
-  "locked": false
+  "smartEkycEnabled": true,
+  "faceRecognitionEnabled": true
 }
 ```
 
-**Expected Response: 200 OK** (isLocked = false)
+**Behavior:**
+- OFFICER can update any user.
+- CUSTOMER can update only their own userId.
 
 ---
 
-## Bước 7: Test Login lại sau khi mở khóa
+## 6) Update smart OTP (only allowed if smartEkycEnabled == true)
 
 ```http
-POST http://localhost:8080/api/auth/login
+PATCH {{base_url}}/api/users/{userId}/smart-otp
+Authorization: Bearer {{customer_token}} (or {{officer_token}})
 Content-Type: application/json
 
 {
-  "phone": "0123456789",
-  "password": "password123"
+  "smatOTP": "SOME_SECRET"
 }
 ```
 
-**Expected Response: 200 OK** (Login thành công)
+**Behavior:**
+- If user.smartEkycEnabled != true the request is rejected (IllegalStateException -> handled by GlobalExceptionHandler).
+- OFFICER may update for any user; CUSTOMER only for own user.
 
 ---
 
-## Cấu hình Postman Environment
+## 7) Admin / User Management endpoints (OFFICER only)
 
-Tạo Environment mới với các biến:
+All endpoints below require Authorization: Bearer {{officer_token}}
 
-| Variable Name    | Initial Value      | Current Value      |
-|------------------|--------------------|--------------------|
-| base_url         | http://localhost:8080 | http://localhost:8080 |
-| customer_token   |                    | (paste token)      |
-| officer_token    |                    | (paste token)      |
-
-Sau đó có thể dùng `{{base_url}}` trong các request.
+- GET {{base_url}}/api/users — returns only users with role = customer
+- GET {{base_url}}/api/users/{userId}
+- PUT {{base_url}}/api/users/{userId} — update user info (email, fullName, addresses, dateOfBirth)
+- PATCH {{base_url}}/api/users/{userId}/lock — lock/unlock account
+  Body: { "locked": true }
 
 ---
 
-## Kiểm tra JWT Token
+## 8) Error cases & expected status codes
 
-Vào https://jwt.io và paste token vào để xem payload:
-
-**Payload sẽ có dạng:**
-```json
-{
-  "userId": 1,
-  "fullName": "Nguyen Van A",
-  "phone": "0123456789",
-  "role": "customer",
-  "sub": "0123456789",
-  "iat": 1700560000,
-  "exp": 1700646400
-}
-```
+- 400 Bad Request: validation errors, missing/invalid input (e.g. smatOTP empty)
+- 401 Unauthorized: when required but no/invalid token provided
+- 403 Forbidden: user not authorized to perform an action (customer accessing officer-only endpoint)
+- 404 Not Found: user or resource not found
+- 409 Conflict or 400: business rule violations (e.g. face match below threshold) — project currently throws IllegalArgumentException/IllegalStateException; these are handled by `GlobalExceptionHandler` (check the handler to see mapped status codes)
+- 423 Locked: login attempt for a locked account (AccountLockedException -> mapped to 423 if handler set)
 
 ---
 
-## Troubleshooting
+## 9) JWT inspection
 
-### 1. Lỗi 403 Forbidden khi dùng OFFICER token
-- Kiểm tra role trong database: `SELECT role FROM users WHERE phone = '0987654321';`
-- Đảm bảo role là 'officer' (viết thường)
-- Decode JWT token trên jwt.io để kiểm tra claim "role"
+- JWT token payload includes claims: `userId`, `fullName`, `phone`, `role`, `sub` (phone), `iat`, `exp`.
+- You can inspect token on https://jwt.io by pasting the token and using algorithm HS256. Ensure the secret in `application.properties` matches what you use to inspect (if you rely on jwt.io verify).
 
-### 2. Token không hợp lệ
-- Kiểm tra secret key trong `application.properties` khớp với secret trên jwt.io
-- Đảm bảo thuật toán là HS256
+---
 
-### 3. Database không có field is_locked
-- Chạy lại ứng dụng để Flyway tự động chạy migration V3
+## 10) Postman collection structure suggestion
 
-### 4. Cannot update email - already exists
-- Email phải unique, kiểm tra trong database xem email đã tồn tại chưa
+- Folder: Auth
+  - POST register
+  - POST register-with-face (multipart)
+  - POST login
+  - POST login-with-face (multipart)
+
+- Folder: Users
+  - GET /api/users (OFFICER)
+  - GET /api/users/{id} (OFFICER)
+  - PUT /api/users/{id} (OFFICER)
+  - PATCH /api/users/{id}/lock (OFFICER)
+  - PATCH /api/users/{id}/settings (CUSTOMER/ OFFICER)
+  - PATCH /api/users/{id}/smart-otp (CUSTOMER/ OFFICER)
+
+---
+
+## 11) Troubleshooting tips
+
+- If Face++ calls fail:
+  - Check `faceplus.api.url`, `faceplus.api.key`, `faceplus.api.secret` in `application.properties`.
+  - Ensure Face++ account has quota and the URL endpoint matches the API you're calling (compare vs. `/facepp/v3/compare` docs).
+
+- If Cloudinary upload fails:
+  - Check Cloudinary credentials and ensure the `CloudinaryService` bean is configured.
+
+- If JWT tokens appear invalid on jwt.io:
+  - Ensure algorithm HS256 and the secret used on jwt.io matches `app.jwt.secret` in `application.properties`.
+
+---
+
+If you want, I can also:
+- Export a ready-to-import Postman collection JSON for all requests above.
+- Add Postman tests (assertions) to automatically validate responses.
+- Update `GlobalExceptionHandler` to standardize HTTP status codes for IllegalStateException / IllegalArgumentException.
+
+Tell me which extra item you'd like and I'll add it next.

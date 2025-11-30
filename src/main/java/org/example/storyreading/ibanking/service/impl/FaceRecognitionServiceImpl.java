@@ -79,4 +79,52 @@ public class FaceRecognitionServiceImpl implements FaceRecognitionService {
             throw new RuntimeException("Không tìm thấy confidence trong response từ Face++ API");
         }
     }
+
+    @Override
+    public double compareFaceWithUrl(MultipartFile uploadedFace, String storedPhotoUrl) throws Exception {
+        // Tạo request body với multipart form data
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        body.add("api_key", apiKey);
+        body.add("api_secret", apiSecret);
+
+        // Thêm ảnh upload từ user (dạng file)
+        body.add("image_file1", new ByteArrayResource(uploadedFace.getBytes()) {
+            @Override
+            public String getFilename() {
+                return uploadedFace.getOriginalFilename();
+            }
+        });
+
+        // Thêm ảnh đã lưu (dạng URL từ Cloudinary)
+        body.add("image_url2", storedPhotoUrl);
+
+        // Tạo headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+
+        // Tạo request entity
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+        // Gọi Face++ API
+        ResponseEntity<String> response = restTemplate.postForEntity(apiUrl, requestEntity, String.class);
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Face++ API call failed: " + response.getStatusCode());
+        }
+
+        String responseBody = response.getBody();
+        JsonNode jsonNode = objectMapper.readTree(responseBody);
+
+        // Kiểm tra lỗi từ Face++ API
+        if (jsonNode.has("error_message")) {
+            throw new RuntimeException("Face++ API error: " + jsonNode.get("error_message").asText());
+        }
+
+        // Lấy confidence score
+        if (jsonNode.has("confidence")) {
+            return jsonNode.get("confidence").asDouble();
+        } else {
+            throw new RuntimeException("Không tìm thấy confidence trong response từ Face++ API");
+        }
+    }
 }

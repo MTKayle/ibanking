@@ -11,5 +11,13 @@ public interface FaceRecognitionService {
      * @throws Exception nếu có lỗi khi gọi API
      */
     double compareFaces(MultipartFile image1, MultipartFile image2) throws Exception;
-}
 
+    /**
+     * So sánh ảnh khuôn mặt upload với ảnh đã lưu trên URL (Cloudinary)
+     * @param uploadedFace Ảnh khuôn mặt người dùng upload
+     * @param storedPhotoUrl URL ảnh đã lưu (photoUrl trong database)
+     * @return Độ confidence (0-100)
+     * @throws Exception nếu có lỗi khi gọi API
+     */
+    double compareFaceWithUrl(MultipartFile uploadedFace, String storedPhotoUrl) throws Exception;
+}

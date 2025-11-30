@@ -1,6 +1,9 @@
 package org.example.storyreading.ibanking.service;
 
+import org.example.storyreading.ibanking.dto.FeatureStatusResponse;
 import org.example.storyreading.ibanking.dto.LockUserRequest;
+import org.example.storyreading.ibanking.dto.UpdateSmartOtpRequest;
+import org.example.storyreading.ibanking.dto.SmartFlagsRequest;
 import org.example.storyreading.ibanking.dto.UpdateUserRequest;
 import org.example.storyreading.ibanking.dto.UserResponse;
 import org.example.storyreading.ibanking.entity.User;
@@ -33,6 +36,22 @@ public class UserManagementService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
         return mapToUserResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public FeatureStatusResponse isFaceRecognitionEnabled(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        boolean enabled = user.getFaceRecognitionEnabled() != null && user.getFaceRecognitionEnabled();
+        return new FeatureStatusResponse(enabled);
+    }
+
+    @Transactional(readOnly = true)
+    public FeatureStatusResponse isSmartEkycEnabled(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        boolean enabled = user.getSmartEkycEnabled() != null && user.getSmartEkycEnabled();
+        return new FeatureStatusResponse(enabled);
     }
 
     @Transactional
@@ -84,6 +103,45 @@ public class UserManagementService {
         User updatedUser = userRepository.save(user);
 
         return mapToUserResponse(updatedUser);
+    }
+
+    @Transactional
+    public UserResponse updateSmartFlags(Long userId, SmartFlagsRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Request body is required");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        if (request.getSmartEkycEnabled() != null) {
+            user.setSmartEkycEnabled(request.getSmartEkycEnabled());
+        }
+
+        if (request.getFaceRecognitionEnabled() != null) {
+            user.setFaceRecognitionEnabled(request.getFaceRecognitionEnabled());
+        }
+
+        User updated = userRepository.save(user);
+        return mapToUserResponse(updated);
+    }
+
+    @Transactional
+    public UserResponse updateSmartOtp(Long userId, UpdateSmartOtpRequest request) {
+        if (request == null || request.getSmatOTP() == null || request.getSmatOTP().isEmpty()) {
+            throw new IllegalArgumentException("smatOTP must be provided and not blank");
+        }
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        if (user.getSmartEkycEnabled() == null || !user.getSmartEkycEnabled()) {
+            throw new IllegalStateException("Cannot update smatOTP when smartEkycEnabled is not enabled");
+        }
+
+        user.setSmatOTP(request.getSmatOTP());
+        User updated = userRepository.save(user);
+        return mapToUserResponse(updated);
     }
 
     private UserResponse mapToUserResponse(User user) {

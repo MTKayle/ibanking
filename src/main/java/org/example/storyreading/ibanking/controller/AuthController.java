@@ -75,6 +75,31 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Đăng nhập bằng nhận diện khuôn mặt
+     * Yêu cầu: face_recognition_enabled = true và có photoUrl đã lưu
+     */
+    @PostMapping(value = "/login-with-face", consumes = {"multipart/form-data"})
+    public ResponseEntity<AuthResponse> loginWithFace(
+            @RequestParam("phone") String phone,
+            @RequestPart("facePhoto") MultipartFile facePhoto) throws Exception {
+
+        // Validate file type
+        if (!isImageFile(facePhoto)) {
+            throw new IllegalArgumentException("Chỉ chấp nhận file ảnh (jpg, jpeg, png)");
+        }
+
+        // Validate file size (max 5MB)
+        if (facePhoto.getSize() > 5 * 1024 * 1024) {
+            throw new IllegalArgumentException("Kích thước ảnh không được vượt quá 5MB");
+        }
+
+        // Call service to authenticate with face
+        AuthResponse response = authService.loginWithFaceRecognition(phone, facePhoto);
+
+        return ResponseEntity.ok(response);
+    }
+
     private boolean isImageFile(MultipartFile file) {
         String contentType = file.getContentType();
         return contentType != null && (
