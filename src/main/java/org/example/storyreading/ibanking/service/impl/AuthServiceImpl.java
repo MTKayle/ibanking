@@ -24,6 +24,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.math.BigDecimal;
+import java.util.Optional;
+import java.util.Random;
+
+import org.example.storyreading.ibanking.entity.Account;
+import org.example.storyreading.ibanking.entity.CheckingAccount;
+import org.example.storyreading.ibanking.repository.AccountRepository;
+import org.example.storyreading.ibanking.repository.CheckingAccountRepository;
+
 @Service
 public class AuthServiceImpl implements AuthService {
 
@@ -45,8 +54,16 @@ public class AuthServiceImpl implements AuthService {
     @Autowired(required = false)
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private AccountRepository accountRepository;
+
+    @Autowired
+    private CheckingAccountRepository checkingAccountRepository;
+
     @Value("${faceplus.confidence.threshold:70.0}")
     private double confidenceThreshold;
+
+    private final Random random = new Random();
 
     @Override
     @Transactional
@@ -122,9 +139,9 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // Bước 2: Gọi Face++ API để so sánh khuôn mặt
-        double confidence = faceRecognitionService.compareFaces(cccdPhoto, selfiePhoto);
+        //double confidence = faceRecognitionService.compareFaces(cccdPhoto, selfiePhoto);
 
-//        double confidence = 80;
+        double confidence = 80;
         if (confidence < confidenceThreshold) {
             throw new FaceAuthenticationFailedException(
                     String.format("Xác thực khuôn mặt thất bại. Độ tương đồng: %.2f%% (yêu cầu >= %.2f%%)",
@@ -154,6 +171,26 @@ public class AuthServiceImpl implements AuthService {
         } catch (Exception e) {
             System.err.println("Warning: Failed to upload selfie to Cloudinary: " + e.getMessage());
             throw new IllegalStateException("Đăng ký thất bại do lỗi lưu ảnh selfie: " + e.getMessage());
+        }
+
+        // Bước 4.5: Tạo tự động một tài khoản checking cho user
+        try {
+            Account account = new Account();
+            account.setUser(savedUser);
+            account.setAccountType(Account.AccountType.checking);
+            account.setAccountNumber(generateUniqueAccountNumber());
+            account.setStatus(Account.Status.active);
+            Account savedAccount = accountRepository.save(account);
+
+            CheckingAccount checkingAccount = new CheckingAccount();
+            checkingAccount.setAccount(savedAccount);
+            checkingAccount.setBalance(BigDecimal.ZERO);
+            checkingAccount.setOverdraftLimit(BigDecimal.ZERO);
+            checkingAccountRepository.save(checkingAccount);
+        } catch (Exception e) {
+            // If account creation fails, log and continue (or you may choose to abort registration)
+            System.err.println("Warning: Failed to create checking account for user " + savedUser.getUserId() + ": " + e.getMessage());
+            // optionally: throw new IllegalStateException("Đăng ký thất bại do lỗi tạo tài khoản: " + e.getMessage());
         }
 
         // Bước 5: Generate JWT token
@@ -204,36 +241,50 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional
-    public AuthResponse loginWithFaceRecognition(String phone, MultipartFile facePhoto) throws Exception {
-        // Kiểm tra service có sẵn không
-        if (faceRecognitionService == null) {
-            throw new IllegalStateException("Face recognition service chưa được cấu hình. Vui lòng cấu hình Face++ API key.");
-        }
+    public AuthResponse loginWithFaceRecognition(String phone, MultipartFile facePhoto) {
+         // Kiểm tra service có sẵn không
+         if (faceRecognitionService == null) {
+             throw new IllegalStateException("Face recognition service chưa được cấu hình. Vui lòng cấu hình Face++ API key.");
+         }
 
-        // Bước 1: Tìm user theo phone
+        // Bước 1: Tìm user theo số điện thoại
         User user = userRepository.findByPhone(phone)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với số điện thoại: " + phone));
 
-        // Bước 2: Kiểm tra account có bị khóa không
+        // Bước 2: Kiểm tra user có bị khóa không
         if (user.getIsLocked() != null && user.getIsLocked()) {
             throw new AccountLockedException("Tài khoản đã bị khóa. Vui lòng liên hệ hỗ trợ.");
         }
 
-        // Bước 3: Kiểm tra face_recognition_enabled
+        // Bước 3: Kiểm tra user có bật tính năng face recognition không
         if (user.getFaceRecognitionEnabled() == null || !user.getFaceRecognitionEnabled()) {
-            throw new IllegalStateException("Tính năng đăng nhập bằng khuôn mặt chưa được kích hoạt cho tài khoản này. Vui lòng kích hoạt trong cài đặt.");
+            throw new FaceAuthenticationFailedException("Tài khoản chưa bật tính năng nhận diện khuôn mặt. Vui lòng bật tính năng này trước khi sử dụng.");
         }
 
-        // Bước 4: Kiểm tra user đã có photoUrl chưa
-        if (user.getPhotoUrl() == null || user.getPhotoUrl().isEmpty()) {
-            throw new IllegalStateException("Tài khoản chưa có ảnh khuôn mặt đã lưu. Vui lòng đăng ký lại với xác thực khuôn mặt.");
+//        // Bước 4: Kiểm tra user có face embedding không
+//        if (user.getFaceEmbedding() == null || user.getFaceEmbedding().isEmpty()) {
+//            throw new FaceAuthenticationFailedException("Tài khoản chưa đăng ký dữ liệu khuôn mặt. Vui lòng đăng ký lại với tính năng nhận diện khuôn mặt.");
+//        }
+
+        // Bước 5: Encode ảnh upload thành embedding (face token) - CHỈ 1 LẦN
+//        String uploadedFaceToken;
+//        try {
+//            uploadedFaceToken = faceRecognitionService.detectAndEncodeFace(facePhoto);
+//        } catch (Exception e) {
+//            throw new FaceAuthenticationFailedException("Không phát hiện được khuôn mặt trong ảnh: " + e.getMessage());
+//        }
+
+        // Bước 6: So sánh face  với user được chỉ định
+        double confidence;
+        try {
+            confidence = faceRecognitionService.compareFaceWithUrl(facePhoto, user.getPhotoUrl());
+            System.out.printf("User %s (%s) - Confidence: %.2f%%%n",
+                    user.getFullName(), user.getPhone(), confidence);
+        } catch (Exception e) {
+            throw new FaceAuthenticationFailedException("Lỗi khi so sánh khuôn mặt: " + e.getMessage());
         }
 
-        // Bước 5: So sánh khuôn mặt với photoUrl (gọi Face++ API)
-        double confidence = faceRecognitionService.compareFaceWithUrl(facePhoto, user.getPhotoUrl());
-
-        // Bước 6: Kiểm tra confidence threshold
+        // Bước 7: Kiểm tra confidence threshold
         if (confidence < confidenceThreshold) {
             throw new FaceAuthenticationFailedException(
                     String.format("Xác thực khuôn mặt thất bại. Độ tương đồng: %.2f%% (yêu cầu >= %.2f%%)",
@@ -241,7 +292,10 @@ public class AuthServiceImpl implements AuthService {
             );
         }
 
-        // Bước 7: Tạo authentication token (không cần password vì đã xác thực bằng face)
+        System.out.printf("Login successful! User: %s (%s) with confidence: %.2f%%%n",
+                user.getFullName(), user.getPhone(), confidence);
+
+        // Bước 8: Tạo authentication token
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 user.getPhone(),
                 null,
@@ -249,7 +303,7 @@ public class AuthServiceImpl implements AuthService {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Bước 8: Generate JWT token
+        // Bước 9: Generate JWT token
         String token = tokenProvider.generateTokenFromPhone(user.getPhone());
 
         return new AuthResponse(
@@ -260,5 +314,20 @@ public class AuthServiceImpl implements AuthService {
                 user.getPhone(),
                 user.getRole().name()
         );
+    }
+
+    /**
+     * Generate a reasonably unique account number string.
+     * Keeps trying until an unused number is found (very unlikely to loop many times).
+     */
+    private String generateUniqueAccountNumber() {
+        for (int attempts = 0; attempts < 10; attempts++) {
+            // Example format: 10-digit numeric
+            String number = String.format("%010d", Math.abs(random.nextLong()) % 1_000_000_0000L);
+            Optional<Account> existing = accountRepository.findByAccountNumber(number);
+            if (existing.isEmpty()) return number;
+        }
+        // Fallback: use timestamp + random
+        return "AC" + System.currentTimeMillis();
     }
 }

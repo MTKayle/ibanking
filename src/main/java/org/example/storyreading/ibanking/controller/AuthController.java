@@ -77,7 +77,7 @@ public class AuthController {
 
     /**
      * Đăng nhập bằng nhận diện khuôn mặt
-     * Yêu cầu: face_recognition_enabled = true và có photoUrl đã lưu
+     * Frontend cần gửi ảnh và số điện thoại, backend sẽ so sánh với user có số điện thoại đó
      */
     @PostMapping(value = "/login-with-face", consumes = {"multipart/form-data"})
     public ResponseEntity<AuthResponse> loginWithFace(
@@ -94,7 +94,7 @@ public class AuthController {
             throw new IllegalArgumentException("Kích thước ảnh không được vượt quá 5MB");
         }
 
-        // Call service to authenticate with face
+        // Call service to authenticate with face (cần phone để xác định user)
         AuthResponse response = authService.loginWithFaceRecognition(phone, facePhoto);
 
         return ResponseEntity.ok(response);
