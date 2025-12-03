@@ -16,4 +16,6 @@ public interface AuthService {
     AuthResponse login(LoginRequest loginRequest);
 
     AuthResponse loginWithFaceRecognition(String phone, MultipartFile facePhoto) throws Exception;
+
+    AuthResponse refreshToken(String refreshToken);
 }

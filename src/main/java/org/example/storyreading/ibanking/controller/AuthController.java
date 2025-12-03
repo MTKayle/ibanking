@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import org.example.storyreading.ibanking.dto.AuthResponse;
 import org.example.storyreading.ibanking.dto.LoginRequest;
 import org.example.storyreading.ibanking.dto.RegisterRequest;
+import org.example.storyreading.ibanking.dto.RefreshTokenRequest;
 import org.example.storyreading.ibanking.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -97,6 +98,15 @@ public class AuthController {
         // Call service to authenticate with face (cần phone để xác định user)
         AuthResponse response = authService.loginWithFaceRecognition(phone, facePhoto);
 
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Refresh access token bằng refresh token
+     */
+    @PostMapping("/refresh-token")
+    public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest refreshTokenRequest) {
+        AuthResponse response = authService.refreshToken(refreshTokenRequest.getRefreshToken());
         return ResponseEntity.ok(response);
     }
 

@@ -227,11 +227,13 @@ public class AuthServiceImpl implements AuthService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Generate JWT token
+        // Generate JWT tokens
         String token = tokenProvider.generateToken(authentication);
+        String refreshToken = tokenProvider.generateRefreshTokenFromAuthentication(authentication);
 
         return new AuthResponse(
                 token,
+                refreshToken,
                 user.getUserId(),
                 user.getEmail(),
                 user.getFullName(),
@@ -261,20 +263,7 @@ public class AuthServiceImpl implements AuthService {
             throw new FaceAuthenticationFailedException("Tài khoản chưa bật tính năng nhận diện khuôn mặt. Vui lòng bật tính năng này trước khi sử dụng.");
         }
 
-//        // Bước 4: Kiểm tra user có face embedding không
-//        if (user.getFaceEmbedding() == null || user.getFaceEmbedding().isEmpty()) {
-//            throw new FaceAuthenticationFailedException("Tài khoản chưa đăng ký dữ liệu khuôn mặt. Vui lòng đăng ký lại với tính năng nhận diện khuôn mặt.");
-//        }
-
-        // Bước 5: Encode ảnh upload thành embedding (face token) - CHỈ 1 LẦN
-//        String uploadedFaceToken;
-//        try {
-//            uploadedFaceToken = faceRecognitionService.detectAndEncodeFace(facePhoto);
-//        } catch (Exception e) {
-//            throw new FaceAuthenticationFailedException("Không phát hiện được khuôn mặt trong ảnh: " + e.getMessage());
-//        }
-
-        // Bước 6: So sánh face  với user được chỉ định
+        // Bước 4: So sánh face với user được chỉ định
         double confidence;
         try {
             confidence = faceRecognitionService.compareFaceWithUrl(facePhoto, user.getPhotoUrl());
@@ -284,7 +273,7 @@ public class AuthServiceImpl implements AuthService {
             throw new FaceAuthenticationFailedException("Lỗi khi so sánh khuôn mặt: " + e.getMessage());
         }
 
-        // Bước 7: Kiểm tra confidence threshold
+        // Bước 5: Kiểm tra confidence threshold
         if (confidence < confidenceThreshold) {
             throw new FaceAuthenticationFailedException(
                     String.format("Xác thực khuôn mặt thất bại. Độ tương đồng: %.2f%% (yêu cầu >= %.2f%%)",
@@ -295,7 +284,7 @@ public class AuthServiceImpl implements AuthService {
         System.out.printf("Login successful! User: %s (%s) with confidence: %.2f%%%n",
                 user.getFullName(), user.getPhone(), confidence);
 
-        // Bước 8: Tạo authentication token
+        // Bước 6: Tạo authentication token
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 user.getPhone(),
                 null,
@@ -303,11 +292,52 @@ public class AuthServiceImpl implements AuthService {
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        // Bước 9: Generate JWT token
+        // Bước 7: Generate JWT tokens
         String token = tokenProvider.generateTokenFromPhone(user.getPhone());
+        String refreshToken = tokenProvider.generateRefreshToken(user.getPhone());
 
         return new AuthResponse(
                 token,
+                refreshToken,
+                user.getUserId(),
+                user.getEmail(),
+                user.getFullName(),
+                user.getPhone(),
+                user.getRole().name()
+        );
+    }
+
+    @Override
+    public AuthResponse refreshToken(String refreshToken) {
+        // Validate refresh token
+        if (!tokenProvider.validateToken(refreshToken)) {
+            throw new IllegalArgumentException("Refresh token không hợp lệ hoặc đã hết hạn");
+        }
+
+        // Check if token is actually a refresh token
+        if (!tokenProvider.isRefreshToken(refreshToken)) {
+            throw new IllegalArgumentException("Token không phải là refresh token");
+        }
+
+        // Get phone from refresh token
+        String phone = tokenProvider.getPhoneFromToken(refreshToken);
+
+        // Get user from database
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with phone: " + phone));
+
+        // Check if account is locked
+        if (user.getIsLocked() != null && user.getIsLocked()) {
+            throw new AccountLockedException("Account is locked. Please contact support.");
+        }
+
+        // Generate new access token and refresh token
+        String newAccessToken = tokenProvider.generateTokenFromPhone(user.getPhone());
+        String newRefreshToken = tokenProvider.generateRefreshToken(user.getPhone());
+
+        return new AuthResponse(
+                newAccessToken,
+                newRefreshToken,
                 user.getUserId(),
                 user.getEmail(),
                 user.getFullName(),

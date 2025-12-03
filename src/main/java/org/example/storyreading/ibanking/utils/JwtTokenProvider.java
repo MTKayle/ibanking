@@ -28,6 +28,9 @@ public class JwtTokenProvider {
     @Value("${app.jwt.expiration:86400000}") // 24 hours in milliseconds
     private long jwtExpirationMs;
 
+    @Value("${app.jwt.refresh-expiration:604800000}") // 7 days in milliseconds
+    private long refreshTokenExpirationMs;
+
     private SecretKey getSigningKey() {
         // Sử dụng secret key trực tiếp (dạng string)
         byte[] keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
@@ -65,6 +68,27 @@ public class JwtTokenProvider {
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    public String generateRefreshToken(String phone) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + refreshTokenExpirationMs);
+
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("tokenType", "refresh");
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(phone)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String generateRefreshTokenFromAuthentication(Authentication authentication) {
+        CustomUserDetails userPrincipal = (CustomUserDetails) authentication.getPrincipal();
+        return generateRefreshToken(userPrincipal.getPhone());
     }
 
     public String getPhoneFromToken(String token) {
@@ -133,5 +157,18 @@ public class JwtTokenProvider {
             System.err.println("JWT claims string is empty");
         }
         return false;
+    }
+
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return "refresh".equals(claims.get("tokenType"));
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
