@@ -3,11 +3,13 @@ package org.example.storyreading.ibanking.service.impl;
 import org.example.storyreading.ibanking.dto.AuthResponse;
 import org.example.storyreading.ibanking.dto.LoginRequest;
 import org.example.storyreading.ibanking.dto.RegisterRequest;
+import org.example.storyreading.ibanking.entity.Bank;
 import org.example.storyreading.ibanking.entity.User;
 import org.example.storyreading.ibanking.exception.AccountLockedException;
 import org.example.storyreading.ibanking.exception.FaceAuthenticationFailedException;
 import org.example.storyreading.ibanking.exception.ResourceAlreadyExistsException;
 import org.example.storyreading.ibanking.exception.ResourceNotFoundException;
+import org.example.storyreading.ibanking.repository.BankRepository;
 import org.example.storyreading.ibanking.repository.UserRepository;
 import org.example.storyreading.ibanking.service.AuthService;
 import org.example.storyreading.ibanking.service.CloudinaryService;
@@ -64,6 +66,8 @@ public class AuthServiceImpl implements AuthService {
     private double confidenceThreshold;
 
     private final Random random = new Random();
+    @Autowired
+    private BankRepository bankRepository;
 
     @Override
     @Transactional
@@ -160,6 +164,10 @@ public class AuthServiceImpl implements AuthService {
         user.setPermanentAddress(registerRequest.getPermanentAddress());
         user.setTemporaryAddress(registerRequest.getTemporaryAddress());
         user.setRole(User.Role.customer);
+        //gan bank co id = 21 cho user moi dang ky
+        Bank bank = bankRepository.findById(21L)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ngân hàng với ID: 21"));
+        user.setBank(bank);
 
         User savedUser = userRepository.save(user);
 

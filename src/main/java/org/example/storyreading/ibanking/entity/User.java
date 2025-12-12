@@ -88,6 +88,15 @@ public class User {
     @Column(name = "smat_OTP")
     private String smatOTP;
 
+    // Face embedding for face recognition
+    @Column(name = "face_embedding", columnDefinition = "TEXT")
+    private String faceEmbedding;
+
+    // Bank relationship - mỗi user chỉ có 1 ngân hàng
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bank_id", referencedColumnName = "bank_id")
+    private Bank bank;
+
     // Relationship: one user -> many ekyc photos
 //    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
 //    private List<EkycPhoto> ekycPhotos = new ArrayList<>();
@@ -231,6 +240,22 @@ public class User {
 
     public void setSmatOTP(String smatOTP) {
         this.smatOTP = smatOTP;
+    }
+
+    public String getFaceEmbedding() {
+        return faceEmbedding;
+    }
+
+    public void setFaceEmbedding(String faceEmbedding) {
+        this.faceEmbedding = faceEmbedding;
+    }
+
+    public Bank getBank() {
+        return bank;
+    }
+
+    public void setBank(Bank bank) {
+        this.bank = bank;
     }
 
     @PrePersist
