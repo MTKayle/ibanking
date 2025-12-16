@@ -22,10 +22,13 @@ public class SavingAccount {
     @Column(name = "balance", nullable = false, precision = 19, scale = 2)
     private BigDecimal balance = BigDecimal.ZERO;
 
+    @Column(name = "saving_book_number", unique = true, length = 50)
+    private String savingBookNumber; // STK-20251216001
+
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false, length = 20)
-    private AccountType type = AccountType.DEMAND;
+    @Column(name = "term", nullable = false, length = 30)
+    private SavingTerm term = SavingTerm.NON_TERM;
 
     // interest rate updated by banking officers
     @Column(name = "interest_rate", precision = 10, scale = 4)
@@ -35,29 +38,17 @@ public class SavingAccount {
     private LocalDate openedDate;
 
     @Column(name = "maturity_date")
-    private LocalDate maturityDate; // null if non-term
-
-    // profit per month (calculated or stored)
-    @Column(name = "profit_per_month", precision = 19, scale = 2)
-    private BigDecimal profitPerMonth = BigDecimal.ZERO;
-
-    @Column(name = "next_profit_date")
-    private LocalDate nextProfitDate;
+    private LocalDate maturityDate;
 
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
     private Status status = Status.ACTIVE;
 
-    public enum AccountType {
-        FIXED_TERM,
-        DEMAND
-    }
-
     public enum Status {
-        ACTIVE,
-        CLOSED,
-        LOCKED
+        ACTIVE,      // Đang hoạt động
+        MATURED,     // Đã đáo hạn
+        CLOSED       // Đã tất toán
     }
 
     public SavingAccount() {
@@ -65,39 +56,29 @@ public class SavingAccount {
 
     public SavingAccount(Account account,
                          BigDecimal balance,
-                         AccountType type,
+                         String savingBookNumber,
+                         SavingTerm term,
                          BigDecimal interestRate,
                          LocalDate openedDate,
                          LocalDate maturityDate,
-                         BigDecimal profitPerMonth,
-                         LocalDate nextProfitDate,
                          Status status) {
         this.account = account;
-        this.savingId = (account != null) ? account.getAccountId() : null;
         this.balance = (balance != null) ? balance : BigDecimal.ZERO;
-        this.type = (type != null) ? type : AccountType.DEMAND;
+        this.savingBookNumber = savingBookNumber;
+        this.term = (term != null) ? term : SavingTerm.NON_TERM;
         this.interestRate = (interestRate != null) ? interestRate : BigDecimal.ZERO;
         this.openedDate = openedDate;
         this.maturityDate = maturityDate;
-        this.profitPerMonth = (profitPerMonth != null) ? profitPerMonth : BigDecimal.ZERO;
-        this.nextProfitDate = nextProfitDate;
         this.status = (status != null) ? status : Status.ACTIVE;
-    }
-
-    @PrePersist
-    protected void onCreate() {
-        if (this.balance == null) this.balance = BigDecimal.ZERO;
-        if (this.interestRate == null) this.interestRate = BigDecimal.ZERO;
-        if (this.profitPerMonth == null) this.profitPerMonth = BigDecimal.ZERO;
-        if (this.status == null) this.status = Status.ACTIVE;
-        if (this.account != null && this.account.getAccountNumber() != null) {
-            this.savingId = this.account.getAccountId();
-        }
     }
 
     // Getters and setters
     public Long getSavingId() {
         return savingId;
+    }
+
+    public void setSavingId(Long savingId) {
+        this.savingId = savingId;
     }
 
     public Account getAccount() {
@@ -106,7 +87,6 @@ public class SavingAccount {
 
     public void setAccount(Account account) {
         this.account = account;
-        if (account != null) this.savingId = account.getAccountId();
     }
 
     public BigDecimal getBalance() {
@@ -117,12 +97,21 @@ public class SavingAccount {
         this.balance = balance;
     }
 
-    public AccountType getType() {
-        return type;
+    public String getSavingBookNumber() {
+        return savingBookNumber;
     }
 
-    public void setType(AccountType type) {
-        this.type = type;
+    public void setSavingBookNumber(String savingBookNumber) {
+        this.savingBookNumber = savingBookNumber;
+    }
+
+    public SavingTerm getTerm() {
+        return term;
+    }
+
+    public void setTerm(SavingTerm term) {
+        this.term = term;
+        // Don't auto-set interest rate here - it should be set explicitly from the database
     }
 
     public BigDecimal getInterestRate() {
@@ -149,27 +138,18 @@ public class SavingAccount {
         this.maturityDate = maturityDate;
     }
 
-    public BigDecimal getProfitPerMonth() {
-        return profitPerMonth;
-    }
-
-    public void setProfitPerMonth(BigDecimal profitPerMonth) {
-        this.profitPerMonth = profitPerMonth;
-    }
-
-    public LocalDate getNextProfitDate() {
-        return nextProfitDate;
-    }
-
-    public void setNextProfitDate(LocalDate nextProfitDate) {
-        this.nextProfitDate = nextProfitDate;
-    }
-
     public Status getStatus() {
         return status;
     }
 
     public void setStatus(Status status) {
         this.status = status;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.balance == null) this.balance = BigDecimal.ZERO;
+        if (this.interestRate == null) this.interestRate = BigDecimal.ZERO;
+        if (this.status == null) this.status = Status.ACTIVE;
     }
 }

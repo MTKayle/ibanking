@@ -24,6 +24,6 @@ public class VerifyOtpRequest {
     public void setTransactionCode(String transactionCode) {
         this.transactionCode = transactionCode;
     }
-    
+
 }
 

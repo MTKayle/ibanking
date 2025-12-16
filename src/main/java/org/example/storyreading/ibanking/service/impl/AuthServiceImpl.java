@@ -142,10 +142,10 @@ public class AuthServiceImpl implements AuthService {
             throw new ResourceAlreadyExistsException("Số CCCD đã được sử dụng: " + registerRequest.getCccdNumber());
         }
 
-        // Bước 2: Gọi Face++ API để so sánh khuôn mặt
-        //double confidence = faceRecognitionService.compareFaces(cccdPhoto, selfiePhoto);
+       //  Bước 2: Gọi Face++ API để so sánh khuôn mặt
+        double confidence = faceRecognitionService.compareFaces(cccdPhoto, selfiePhoto);
 
-        double confidence = 80;
+//        double confidence = 80;
         if (confidence < confidenceThreshold) {
             throw new FaceAuthenticationFailedException(
                     String.format("Xác thực khuôn mặt thất bại. Độ tương đồng: %.2f%% (yêu cầu >= %.2f%%)",
@@ -164,9 +164,9 @@ public class AuthServiceImpl implements AuthService {
         user.setPermanentAddress(registerRequest.getPermanentAddress());
         user.setTemporaryAddress(registerRequest.getTemporaryAddress());
         user.setRole(User.Role.customer);
-        //gan bank co id = 21 cho user moi dang ky
-        Bank bank = bankRepository.findById(21L)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ngân hàng với ID: 21"));
+        //gan bank co HAT cho user moi dang ky
+        Bank bank = bankRepository.findByBankBin("770717")
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy ngân hàng với Bank Code: 770717"));
         user.setBank(bank);
 
         User savedUser = userRepository.save(user);
