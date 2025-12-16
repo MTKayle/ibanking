@@ -85,6 +85,8 @@ public class User {
     private Boolean smartEkycEnabled = false;
     @Column(name =  "face_recognition_enabled", nullable = false)
     private Boolean faceRecognitionEnabled = false;
+    @Column(name = "fingerprint_login_enabled", nullable = false)
+    private Boolean fingerprintLoginEnabled = false;
     @Column(name = "smat_OTP")
     private String smatOTP;
 
@@ -232,6 +234,14 @@ public class User {
 
     public void setFaceRecognitionEnabled(Boolean faceRecognitionEnabled) {
         this.faceRecognitionEnabled = faceRecognitionEnabled;
+    }
+
+    public Boolean getFingerprintLoginEnabled() {
+        return fingerprintLoginEnabled;
+    }
+
+    public void setFingerprintLoginEnabled(Boolean fingerprintLoginEnabled) {
+        this.fingerprintLoginEnabled = fingerprintLoginEnabled;
     }
 
     public String getSmatOTP() {

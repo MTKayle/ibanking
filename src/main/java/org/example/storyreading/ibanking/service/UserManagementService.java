@@ -54,6 +54,14 @@ public class UserManagementService {
         return new FeatureStatusResponse(enabled);
     }
 
+    @Transactional(readOnly = true)
+    public FeatureStatusResponse isFingerprintLoginEnabled(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+        boolean enabled = user.getFingerprintLoginEnabled() != null && user.getFingerprintLoginEnabled();
+        return new FeatureStatusResponse(enabled);
+    }
+
     @Transactional
     public UserResponse updateUser(Long userId, UpdateUserRequest request) {
         User user = userRepository.findById(userId)
@@ -120,6 +128,10 @@ public class UserManagementService {
 
         if (request.getFaceRecognitionEnabled() != null) {
             user.setFaceRecognitionEnabled(request.getFaceRecognitionEnabled());
+        }
+
+        if (request.getFingerprintLoginEnabled() != null) {
+            user.setFingerprintLoginEnabled(request.getFingerprintLoginEnabled());
         }
 
         User updated = userRepository.save(user);

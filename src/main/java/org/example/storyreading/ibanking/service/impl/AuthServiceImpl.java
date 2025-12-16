@@ -368,4 +368,20 @@ public class AuthServiceImpl implements AuthService {
         // Fallback: use timestamp + random
         return "AC" + System.currentTimeMillis();
     }
+
+    @Override
+    public boolean isFingerprintLoginEnabledByPhone(String phone) {
+        // Tìm user theo số điện thoại
+        Optional<User> userOpt = userRepository.findByPhone(phone);
+
+        // Nếu không tìm thấy user hoặc user chưa bật fingerprint login, return false
+        if (userOpt.isEmpty()) {
+            return false;
+        }
+
+        User user = userOpt.get();
+
+        // Kiểm tra xem user có bật fingerprint login không
+        return user.getFingerprintLoginEnabled() != null && user.getFingerprintLoginEnabled();
+    }
 }

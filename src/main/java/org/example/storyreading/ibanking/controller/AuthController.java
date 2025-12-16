@@ -5,6 +5,7 @@ import org.example.storyreading.ibanking.dto.AuthResponse;
 import org.example.storyreading.ibanking.dto.LoginRequest;
 import org.example.storyreading.ibanking.dto.RegisterRequest;
 import org.example.storyreading.ibanking.dto.RefreshTokenRequest;
+import org.example.storyreading.ibanking.dto.FeatureStatusResponse;
 import org.example.storyreading.ibanking.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -108,6 +109,16 @@ public class AuthController {
     public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest refreshTokenRequest) {
         AuthResponse response = authService.refreshToken(refreshTokenRequest.getRefreshToken());
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Kiểm tra xem số điện thoại có bật fingerprint login không
+     * API này không cần authentication, dùng cho màn hình đăng nhập
+     */
+    @GetMapping("/check-fingerprint-enabled")
+    public ResponseEntity<?> checkFingerprintEnabled(@RequestParam("phone") String phone) {
+        boolean enabled = authService.isFingerprintLoginEnabledByPhone(phone);
+        return ResponseEntity.ok(new FeatureStatusResponse(enabled));
     }
 
     private boolean isImageFile(MultipartFile file) {

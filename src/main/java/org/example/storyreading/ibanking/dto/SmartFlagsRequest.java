@@ -10,6 +10,9 @@ public class SmartFlagsRequest {
 
     private Boolean faceRecognitionEnabled;
 
+
+    private Boolean fingerprintLoginEnabled;
+
     public Boolean getSmartEkycEnabled() {
         return smartEkycEnabled;
     }
@@ -25,5 +28,12 @@ public class SmartFlagsRequest {
     public void setFaceRecognitionEnabled(Boolean faceRecognitionEnabled) {
         this.faceRecognitionEnabled = faceRecognitionEnabled;
     }
-}
 
+    public Boolean getFingerprintLoginEnabled() {
+        return fingerprintLoginEnabled;
+    }
+
+    public void setFingerprintLoginEnabled(Boolean fingerprintLoginEnabled) {
+        this.fingerprintLoginEnabled = fingerprintLoginEnabled;
+    }
+}

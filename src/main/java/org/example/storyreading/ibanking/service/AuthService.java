@@ -18,4 +18,6 @@ public interface AuthService {
     AuthResponse loginWithFaceRecognition(String phone, MultipartFile facePhoto) throws Exception;
 
     AuthResponse refreshToken(String refreshToken);
+
+    boolean isFingerprintLoginEnabledByPhone(String phone);
 }

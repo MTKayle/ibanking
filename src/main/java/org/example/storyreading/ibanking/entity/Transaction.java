@@ -45,12 +45,23 @@ public class Transaction {
     @Column(name = "code", nullable = false, unique = true, length = 100)
     private String code;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private TransactionStatus status = TransactionStatus.PENDING;
+
     public enum TransactionType {
         DEPOSIT,        // Nạp tiền: chỉ có receiverAccount
         WITHDRAW,       // Rút tiền: chỉ có senderAccount
         TRANSFER,       // Chuyển khoản: có cả senderAccount và receiverAccount
         LOAN_PAYMENT,   // Trả nợ: senderAccount trả cho mortgage account
         INTEREST_INCOME // Lãi: receiverAccount nhận lãi
+    }
+
+    public enum TransactionStatus {
+        PENDING,   // Giao dịch đang chờ xử lý
+        SUCCESS,   // Giao dịch thành công
+        FAILED     // Giao dịch thất bại
     }
 
     public Transaction() {
@@ -126,5 +137,13 @@ public class Transaction {
 
     public void setCode(String code) {
         this.code = code;
+    }
+
+    public TransactionStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(TransactionStatus status) {
+        this.status = status;
     }
 }

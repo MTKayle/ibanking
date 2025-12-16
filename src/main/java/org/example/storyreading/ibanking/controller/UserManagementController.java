@@ -63,6 +63,16 @@ public class UserManagementController {
     }
 
     /**
+     * Check if fingerprint login is enabled for a user
+     */
+    @GetMapping("/{userId}/features/fingerprint-login")
+    @PreAuthorize("hasRole('OFFICER') or (hasRole('CUSTOMER') and #userId == authentication.principal.userId)")
+    public ResponseEntity<FeatureStatusResponse> isFingerprintLoginEnabled(@PathVariable Long userId) {
+        FeatureStatusResponse status = userManagementService.isFingerprintLoginEnabled(userId);
+        return ResponseEntity.ok(status);
+    }
+
+    /**
      * Update user information - Only OFFICER can access
      */
     @PutMapping("/{userId}")
