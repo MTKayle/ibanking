@@ -4,6 +4,7 @@ import org.example.storyreading.ibanking.dto.DepositRequest;
 import org.example.storyreading.ibanking.dto.DepositResponse;
 import org.example.storyreading.ibanking.dto.TransferRequest;
 import org.example.storyreading.ibanking.dto.TransferResponse;
+import org.example.storyreading.ibanking.dto.OtpResponse;
 import org.example.storyreading.ibanking.entity.Account;
 import org.example.storyreading.ibanking.entity.CheckingAccount;
 import org.example.storyreading.ibanking.entity.Transaction;
@@ -43,6 +44,8 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Autowired
     private TransactionCreationService transactionCreationService;
+
+
 
     @Override
     @Transactional
@@ -312,6 +315,217 @@ public class PaymentServiceImpl implements PaymentService {
                 UUID.randomUUID().toString().substring(0, 8).toUpperCase());
     }
 
+    @Override
+    @Transactional
+    public OtpResponse initiateTransferWithOtp(TransferRequest transferRequest) {
+        String transactionCode = generateTransferTransactionCode();
 
+        try {
+            // Bước 1: Validate request
+            if (transferRequest.getSenderAccountNumber().equals(transferRequest.getReceiverAccountNumber())) {
+                throw new IllegalArgumentException("Không thể chuyển tiền cho chính mình");
+            }
+
+            if (transferRequest.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Số tiền chuyển phải lớn hơn 0");
+            }
+
+            // Bước 2: Tìm cả hai account (không lock)
+            CheckingAccount senderChecking = checkingAccountRepository
+                    .findByAccountNumber(transferRequest.getSenderAccountNumber())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Không tìm thấy tài khoản gửi: " + transferRequest.getSenderAccountNumber()));
+
+            CheckingAccount receiverChecking = checkingAccountRepository
+                    .findByAccountNumber(transferRequest.getReceiverAccountNumber())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Không tìm thấy tài khoản nhận: " + transferRequest.getReceiverAccountNumber()));
+
+            // Bước 3: Kiểm tra account type phải là checking
+            Account senderAccount = senderChecking.getAccount();
+            Account receiverAccount = receiverChecking.getAccount();
+
+            if (senderAccount.getAccountType() != Account.AccountType.checking) {
+                throw new IllegalArgumentException("Tài khoản gửi phải là tài khoản checking");
+            }
+
+            if (receiverAccount.getAccountType() != Account.AccountType.checking) {
+                throw new IllegalArgumentException("Tài khoản nhận phải là tài khoản checking");
+            }
+
+            // Bước 4: KIỂM TRA QUYỀN SỞ HỮU
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication != null && authentication.getPrincipal() instanceof CustomUserDetails) {
+                CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+                Long currentUserId = userDetails.getUserId();
+                String currentUserRole = userDetails.getRole().name();
+
+                if ("customer".equalsIgnoreCase(currentUserRole)) {
+                    Long senderAccountOwnerId = senderAccount.getUser().getUserId();
+
+                    if (!currentUserId.equals(senderAccountOwnerId)) {
+                        throw new AccessDeniedException(
+                                "Bạn không có quyền chuyển tiền từ tài khoản này.");
+                    }
+                }
+            }
+
+            // Bước 5: Kiểm tra trạng thái tài khoản
+            if (senderAccount.getStatus() != Account.Status.active) {
+                throw new IllegalStateException("Tài khoản gửi không hoạt động");
+            }
+
+            if (receiverAccount.getStatus() != Account.Status.active) {
+                throw new IllegalStateException("Tài khoản nhận không hoạt động");
+            }
+
+            // Bước 6: Kiểm tra số dư (không lock, chỉ check)
+            BigDecimal senderBalance = senderChecking.getBalance();
+            BigDecimal overdraftLimit = senderChecking.getOverdraftLimit() != null
+                    ? senderChecking.getOverdraftLimit()
+                    : BigDecimal.ZERO;
+            BigDecimal availableAmount = senderBalance.add(overdraftLimit);
+
+            if (availableAmount.compareTo(transferRequest.getAmount()) < 0) {
+                throw new IllegalArgumentException(
+                        String.format("Số dư không đủ. Số dư khả dụng: %.2f, Số tiền chuyển: %.2f",
+                                availableAmount, transferRequest.getAmount()));
+            }
+
+            // Bước 7: TẠO TRANSACTION PENDING
+            Transaction transaction = transactionCreationService.createPendingTransaction(
+                    senderAccount,
+                    receiverAccount,
+                    transferRequest.getAmount(),
+                    Transaction.TransactionType.TRANSFER,
+                    transferRequest.getDescription() != null
+                            ? transferRequest.getDescription()
+                            : "Chuyển tiền",
+                    transactionCode
+            );
+
+            return new OtpResponse(
+                    transactionCode,
+                    "Mã giao dich đã được tạo. Vui lòng sử dụng mã OTP để xác nhận giao dịch."
+            );
+
+        } catch (Exception e) {
+            // Nếu có lỗi, mark transaction as failed
+            try {
+                transactionFailureService.markFailed(transactionCode, e);
+            } catch (Exception ignored) {
+                // Ignore
+            }
+            throw e;
+        }
+    }
+
+    @Override
+    @Transactional
+    public TransferResponse confirmTransferWithOtp(String transactionCode) {
+        try {
+            // Bước 2: Tìm transaction
+            Transaction transaction = transactionRepository.findByCode(transactionCode)
+                    .orElseThrow(() -> new ResourceNotFoundException("Transaction not found: " + transactionCode));
+
+            // Bước 3: Kiểm tra transaction phải ở trạng thái PENDING
+            if (transaction.getStatus() != Transaction.TransactionStatus.PENDING) {
+                throw new IllegalStateException("Transaction is not in PENDING status");
+            }
+
+            // Bước 4: Lấy thông tin accounts
+            Account senderAccount = transaction.getSenderAccount();
+            Account receiverAccount = transaction.getReceiverAccount();
+
+            if (senderAccount == null || receiverAccount == null) {
+                throw new IllegalStateException("Invalid transaction: missing sender or receiver account");
+            }
+
+            // Bước 5: Lock accounts theo thứ tự để tránh deadlock
+            Long senderAccountId = senderAccount.getAccountId();
+            Long receiverAccountId = receiverAccount.getAccountId();
+
+            String firstAccountNumber;
+            String secondAccountNumber;
+
+            if (senderAccountId < receiverAccountId) {
+                firstAccountNumber = senderAccount.getAccountNumber();
+                secondAccountNumber = receiverAccount.getAccountNumber();
+            } else {
+                firstAccountNumber = receiverAccount.getAccountNumber();
+                secondAccountNumber = senderAccount.getAccountNumber();
+            }
+
+            // Lock accounts
+            CheckingAccount firstLockAccount = checkingAccountRepository
+                    .findByAccountNumberForUpdate(firstAccountNumber)
+                    .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + firstAccountNumber));
+
+            CheckingAccount secondLockAccount = checkingAccountRepository
+                    .findByAccountNumberForUpdate(secondAccountNumber)
+                    .orElseThrow(() -> new ResourceNotFoundException("Account not found: " + secondAccountNumber));
+
+            // Xác định đâu là sender và receiver
+            CheckingAccount lockedSender;
+            CheckingAccount lockedReceiver;
+
+            if (firstLockAccount.getAccount().getAccountNumber().equals(senderAccount.getAccountNumber())) {
+                lockedSender = firstLockAccount;
+                lockedReceiver = secondLockAccount;
+            } else {
+                lockedSender = secondLockAccount;
+                lockedReceiver = firstLockAccount;
+            }
+
+            // Bước 6: Kiểm tra số dư lại (có thể đã thay đổi)
+            BigDecimal senderBalance = lockedSender.getBalance();
+            BigDecimal overdraftLimit = lockedSender.getOverdraftLimit() != null
+                    ? lockedSender.getOverdraftLimit()
+                    : BigDecimal.ZERO;
+            BigDecimal availableAmount = senderBalance.add(overdraftLimit);
+
+            if (availableAmount.compareTo(transaction.getAmount()) < 0) {
+                throw new IllegalArgumentException("Số dư không đủ để thực hiện giao dịch");
+            }
+
+            // Bước 7: Thực hiện chuyển tiền
+            BigDecimal senderNewBalance = senderBalance.subtract(transaction.getAmount());
+            BigDecimal receiverNewBalance = lockedReceiver.getBalance().add(transaction.getAmount());
+
+            lockedSender.setBalance(senderNewBalance);
+            lockedReceiver.setBalance(receiverNewBalance);
+
+            checkingAccountRepository.save(lockedSender);
+            checkingAccountRepository.save(lockedReceiver);
+
+            // Bước 8: Cập nhật transaction thành SUCCESS
+            transactionFailureService.markSuccess(transactionCode);
+
+            // Bước 9: Tạo response
+            TransferResponse response = new TransferResponse();
+            response.setTransactionId(transaction.getTransactionId());
+            response.setTransactionCode(transactionCode);
+            response.setSenderAccountNumber(senderAccount.getAccountNumber());
+            response.setReceiverAccountNumber(receiverAccount.getAccountNumber());
+            response.setAmount(transaction.getAmount());
+            response.setDescription(transaction.getDescription());
+            response.setSenderNewBalance(senderNewBalance);
+            response.setReceiverNewBalance(receiverNewBalance);
+            response.setReceiverUserFullName(receiverAccount.getUser().getFullName());
+            response.setTransactionTime(transaction.getCreatedAt());
+            response.setStatus("SUCCESS");
+
+            return response;
+
+        } catch (Exception e) {
+            // Mark transaction as failed
+            try {
+                transactionFailureService.markFailed(transactionCode, e);
+            } catch (Exception ignored) {
+                // Ignore
+            }
+            throw e;
+        }
+    }
 
 }

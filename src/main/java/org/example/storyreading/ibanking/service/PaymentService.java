@@ -4,6 +4,7 @@ import org.example.storyreading.ibanking.dto.DepositRequest;
 import org.example.storyreading.ibanking.dto.DepositResponse;
 import org.example.storyreading.ibanking.dto.TransferRequest;
 import org.example.storyreading.ibanking.dto.TransferResponse;
+import org.example.storyreading.ibanking.dto.OtpResponse;
 
 public interface PaymentService {
 
@@ -27,4 +28,24 @@ public interface PaymentService {
      * @return transfer response with transaction details and updated balances
      */
     TransferResponse transferMoney(TransferRequest transferRequest);
+
+    /**
+     * Khởi tạo giao dịch chuyển tiền và tạo OTP
+     * Tạo transaction với trạng thái PENDING
+     * Tạo OTP 6 số với thời gian hết hạn 1 phút
+     *
+     * @param transferRequest request containing sender, receiver account numbers and amount
+     * @return OTP response with transaction code and OTP code
+     */
+    OtpResponse initiateTransferWithOtp(TransferRequest transferRequest);
+
+    /**
+     * Xác nhận giao dịch chuyển tiền bằng OTP
+     * Verify OTP và thực hiện chuyển tiền
+     *
+     * @param transactionCode mã giao dịch
+
+     * @return transfer response with transaction details
+     */
+    TransferResponse confirmTransferWithOtp(String transactionCode);
 }

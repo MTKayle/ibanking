@@ -5,6 +5,8 @@ import org.example.storyreading.ibanking.dto.DepositRequest;
 import org.example.storyreading.ibanking.dto.DepositResponse;
 import org.example.storyreading.ibanking.dto.TransferRequest;
 import org.example.storyreading.ibanking.dto.TransferResponse;
+import org.example.storyreading.ibanking.dto.OtpResponse;
+import org.example.storyreading.ibanking.dto.VerifyOtpRequest;
 import org.example.storyreading.ibanking.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -42,5 +44,31 @@ public class PaymentController {
         TransferResponse response = paymentService.transferMoney(transferRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
-}
 
+    /**
+     * Khởi tạo giao dịch chuyển tiền với OTP
+     * - Validate các ràng buộc
+     * - Tạo transaction với trạng thái PENDING
+     * - Tạo OTP 6 số với thời gian hết hạn 1 phút
+     * - Trả về OTP và transaction code cho client
+     */
+    @PostMapping("/transfer/initiate")
+    @PreAuthorize("hasRole('CUSTOMER') or hasRole('OFFICER') or hasRole('ADMIN')")
+    public ResponseEntity<OtpResponse> initiateTransferWithOtp(@Valid @RequestBody TransferRequest transferRequest) {
+        OtpResponse response = paymentService.initiateTransferWithOtp(transferRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Xác nhận giao dịch chuyển tiền bằng OTP
+     * - Verify OTP
+     * - Thực hiện chuyển tiền
+     * - Update transaction status thành SUCCESS hoặc FAILED
+     */
+    @PostMapping("/transfer/confirm")
+    @PreAuthorize("hasRole('CUSTOMER') or hasRole('OFFICER') or hasRole('ADMIN')")
+    public ResponseEntity<TransferResponse> confirmTransferWithOtp(@Valid @RequestBody VerifyOtpRequest verifyRequest) {
+        TransferResponse response = paymentService.confirmTransferWithOtp(verifyRequest.getTransactionCode());
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+}
