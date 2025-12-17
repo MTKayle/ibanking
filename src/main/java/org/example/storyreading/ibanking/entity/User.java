@@ -63,10 +63,17 @@ public class User {
     @Column(name = "temporary_address", length = 255)
     private String temporaryAddress;
 
+    // Photo URL - có thể null (chưa upload ảnh)
+    @Column(name = "photo_url", columnDefinition = "TEXT", nullable = true)
+    private String photoUrl;
+
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 20)
     private Role role;
+
+    @Column(name = "is_locked", nullable = false)
+    private Boolean isLocked = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -74,9 +81,27 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Column(name = "smart_ekyc_enabled", nullable = false)
+    private Boolean smartEkycEnabled = false;
+    @Column(name =  "face_recognition_enabled", nullable = false)
+    private Boolean faceRecognitionEnabled = false;
+    @Column(name = "fingerprint_login_enabled", nullable = false)
+    private Boolean fingerprintLoginEnabled = false;
+    @Column(name = "smat_OTP")
+    private String smatOTP;
+
+    // Face embedding for face recognition
+    @Column(name = "face_embedding", columnDefinition = "TEXT")
+    private String faceEmbedding;
+
+    // Bank relationship - mỗi user chỉ có 1 ngân hàng
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bank_id", referencedColumnName = "bank_id")
+    private Bank bank;
+
     // Relationship: one user -> many ekyc photos
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<EkycPhoto> ekycPhotos = new ArrayList<>();
+//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+//    private List<EkycPhoto> ekycPhotos = new ArrayList<>();
 
     public enum Role {
         customer,
@@ -170,12 +195,77 @@ public class User {
         this.role = role;
     }
 
+    public Boolean getIsLocked() {
+        return isLocked;
+    }
+
+    public void setIsLocked(Boolean isLocked) {
+        this.isLocked = isLocked;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public String getPhotoUrl() {
+        return photoUrl;
+    }
+
+    public void setPhotoUrl(String photoUrl) {
+        this.photoUrl = photoUrl;
+    }
+
+    // Add getters/setters for smartEkycEnabled, faceRecognitionEnabled and smatOTP
+    public Boolean getSmartEkycEnabled() {
+        return smartEkycEnabled;
+    }
+
+    public void setSmartEkycEnabled(Boolean smartEkycEnabled) {
+        this.smartEkycEnabled = smartEkycEnabled;
+    }
+
+    public Boolean getFaceRecognitionEnabled() {
+        return faceRecognitionEnabled;
+    }
+
+    public void setFaceRecognitionEnabled(Boolean faceRecognitionEnabled) {
+        this.faceRecognitionEnabled = faceRecognitionEnabled;
+    }
+
+    public Boolean getFingerprintLoginEnabled() {
+        return fingerprintLoginEnabled;
+    }
+
+    public void setFingerprintLoginEnabled(Boolean fingerprintLoginEnabled) {
+        this.fingerprintLoginEnabled = fingerprintLoginEnabled;
+    }
+
+    public String getSmatOTP() {
+        return smatOTP;
+    }
+
+    public void setSmatOTP(String smatOTP) {
+        this.smatOTP = smatOTP;
+    }
+
+    public String getFaceEmbedding() {
+        return faceEmbedding;
+    }
+
+    public void setFaceEmbedding(String faceEmbedding) {
+        this.faceEmbedding = faceEmbedding;
+    }
+
+    public Bank getBank() {
+        return bank;
+    }
+
+    public void setBank(Bank bank) {
+        this.bank = bank;
     }
 
     @PrePersist
@@ -190,24 +280,24 @@ public class User {
         this.updatedAt = Instant.now();
     }
 
-    // Ekyc photos accessors
-    public List<EkycPhoto> getEkycPhotos() {
-        return ekycPhotos;
-    }
-
-    public void setEkycPhotos(List<EkycPhoto> ekycPhotos) {
-        this.ekycPhotos = ekycPhotos != null ? ekycPhotos : new ArrayList<>();
-    }
-
-    public void addEkycPhoto(EkycPhoto photo) {
-        ekycPhotos.add(photo);
-        photo.setUser(this);
-    }
-
-    public void removeEkycPhoto(EkycPhoto photo) {
-        ekycPhotos.remove(photo);
-        photo.setUser(null);
-    }
+//    // Ekyc photos accessors
+//    public List<EkycPhoto> getEkycPhotos() {
+//        return ekycPhotos;
+//    }
+//
+//    public void setEkycPhotos(List<EkycPhoto> ekycPhotos) {
+//        this.ekycPhotos = ekycPhotos != null ? ekycPhotos : new ArrayList<>();
+//    }
+//
+//    public void addEkycPhoto(EkycPhoto photo) {
+//        ekycPhotos.add(photo);
+//        photo.setUser(this);
+//    }
+//
+//    public void removeEkycPhoto(EkycPhoto photo) {
+//        ekycPhotos.remove(photo);
+//        photo.setUser(null);
+//    }
 
     // Convenience builder-like setters
 
@@ -248,6 +338,11 @@ public class User {
 
     public User withTemporaryAddress(String addr) {
         setTemporaryAddress(addr);
+        return this;
+    }
+
+    public User withPhotoUrl(String url) {
+        setPhotoUrl(url);
         return this;
     }
 
