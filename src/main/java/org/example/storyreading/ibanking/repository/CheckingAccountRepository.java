@@ -36,8 +36,8 @@ public interface CheckingAccountRepository extends JpaRepository<CheckingAccount
     @Query("SELECT ca FROM CheckingAccount ca WHERE ca.account.user = :user AND ca.account.accountType = 'checking'")
     List<CheckingAccount> findByUser(@Param("user") User user);
 
-    // get first checking account by user id
-    @Query("SELECT ca FROM CheckingAccount ca WHERE ca.account.user.userId = :userId AND ca.account.accountType = 'checking'")
+    // get first checking account by user id with EAGER fetch Account
+    @Query("SELECT ca FROM CheckingAccount ca JOIN FETCH ca.account a WHERE a.user.userId = :userId AND a.accountType = 'checking'")
     Optional<CheckingAccount> findFirstByUserId(@Param("userId") Long userId);
 
 }

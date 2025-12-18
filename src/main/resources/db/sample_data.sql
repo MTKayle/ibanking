@@ -474,3 +474,199 @@ INSERT INTO payments (booking_id, amount, payment_method, payment_status, paymen
 -- 4. Bạn có thể tạo thêm bookings và payments để test đầy đủ các tính năng
 -- 5. Remember: Final price = base_price × price_multiplier
 
+-- ============================================
+-- UTILITY BILLS SAMPLE DATA
+-- ============================================
+
+-- Sample Electricity Bills (EVN - Điện lực)
+INSERT INTO utility_bills (
+    bill_code, bill_type, customer_name, customer_address, customer_phone,
+    period, usage_amount, old_index, new_index, unit_price,
+    amount, vat, total_amount,
+    issue_date, due_date, status,
+    provider_name, provider_code, notes,
+    created_at
+) VALUES
+      (
+          'EVN202411001',
+          'ELECTRICITY',
+          'Nguyễn Văn A',
+          '123 Nguyễn Huệ, Quận 1, TP.HCM',
+          '0901234567',
+          '2024-11',
+          250,
+          1000,
+          1250,
+          2500,
+          625000,
+          62500,
+          687500,
+          '2024-11-25',
+          '2024-12-20',
+          'UNPAID',
+          'Tổng Công ty Điện lực TP.HCM',
+          'EVNHCMC',
+          'Hóa đơn tiền điện tháng 11/2024',
+          NOW()
+      ),
+      (
+          'EVN202412001',
+          'ELECTRICITY',
+          'Trần Thị B',
+          '456 Lê Lợi, Quận 3, TP.HCM',
+          '0912345678',
+          '2024-12',
+          180,
+          1250,
+          1430,
+          2500,
+          450000,
+          45000,
+          495000,
+          '2024-12-15',
+          '2025-01-10',
+          'UNPAID',
+          'Tổng Công ty Điện lực TP.HCM',
+          'EVNHCMC',
+          'Hóa đơn tiền điện tháng 12/2024',
+          NOW()
+      ),
+      (
+          'EVN202410001',
+          'ELECTRICITY',
+          'Lê Văn C',
+          '789 Võ Văn Tần, Quận 3, TP.HCM',
+          '0923456789',
+          '2024-10',
+          320,
+          800,
+          1120,
+          2500,
+          800000,
+          80000,
+          880000,
+          '2024-10-25',
+          '2024-11-20',
+          'OVERDUE',
+          'Tổng Công ty Điện lực TP.HCM',
+          'EVNHCMC',
+          'Hóa đơn tiền điện tháng 10/2024 - Quá hạn',
+          NOW()
+      );
+
+
+INSERT INTO utility_bills (
+    bill_code, bill_type, customer_name, customer_address, customer_phone,
+    period, usage_amount, old_index, new_index, unit_price,
+    amount, vat, total_amount,
+    issue_date, due_date, status,
+    provider_name, provider_code, notes,
+    created_at
+) VALUES
+      (
+          'VNW202411001',
+          'WATER',
+          'Phạm Thị D',
+          '321 Pasteur, Quận 1, TP.HCM',
+          '0934567890',
+          '2024-11',
+          15,
+          100,
+          115,
+          8000,
+          120000,
+          12000,
+          132000,
+          '2024-11-28',
+          '2024-12-25',
+          'UNPAID',
+          'Công ty Cấp nước Sài Gòn',
+          'SAWACO',
+          'Hóa đơn tiền nước tháng 11/2024',
+          NOW()
+      ),
+      (
+          'VNW202412001',
+          'WATER',
+          'Hoàng Văn E',
+          '654 Điện Biên Phủ, Quận 3, TP.HCM',
+          '0945678901',
+          '2024-12',
+          20,
+          115,
+          135,
+          8000,
+          160000,
+          16000,
+          176000,
+          '2024-12-15',
+          '2025-01-12',
+          'UNPAID',
+          'Công ty Cấp nước Sài Gòn',
+          'SAWACO',
+          'Hóa đơn tiền nước tháng 12/2024',
+          NOW()
+      );
+
+
+-- Sample Internet Bills
+INSERT INTO utility_bills (
+    bill_code, bill_type, customer_name, customer_address, customer_phone,
+    period, usage_amount, old_index, new_index, unit_price,
+    amount, vat, total_amount,
+    issue_date, due_date, status,
+    provider_name, provider_code, notes,
+    created_at
+) VALUES
+    (
+        'VNP202412001',
+        'INTERNET',
+        'Vũ Thị F',
+        '147 Hai Bà Trưng, Quận 1, TP.HCM',
+        '0956789012',
+        '2024-12',
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        200000,
+        20000,
+        220000,
+        '2024-12-01',
+        '2024-12-31',
+        'UNPAID',
+        'VNPT TP.HCM',
+        'VNPT',
+        'Gói cước Home 100Mbps',
+        NOW()
+    );
+
+
+-- Sample Phone Bills
+INSERT INTO utility_bills (
+    bill_code, bill_type, customer_name, customer_address, customer_phone,
+    period, usage_amount, old_index, new_index, unit_price, amount, vat, total_amount,
+    issue_date, due_date, status, provider_name, provider_code, notes
+) VALUES
+-- Hóa đơn điện thoại tháng 12/2024
+(
+    'VTL202412001',
+    'PHONE',
+    'Đỗ Văn G',
+    '258 Lý Tự Trọng, Quận 1, TP.HCM',
+    '0967890123',
+    '2024-12',
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    150000,
+    15000,
+    165000,
+    '2024-12-05',
+    '2025-01-05',
+    'UNPAID',
+    'Viettel TP.HCM',
+    'VIETTEL',
+    'Gói cước VD149 - Data không giới hạn'
+);
