@@ -26,4 +26,17 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     // Query by account number
     @Query("SELECT t FROM Transaction t WHERE t.senderAccount.accountNumber = :accountNumber OR t.receiverAccount.accountNumber = :accountNumber ORDER BY t.createdAt DESC")
     List<Transaction> findAllByAccountNumber(@Param("accountNumber") String accountNumber);
+
+    // Query all transactions by userId (for officer)
+    @Query("SELECT t FROM Transaction t WHERE " +
+           "t.senderAccount.user.userId = :userId OR t.receiverAccount.user.userId = :userId " +
+           "ORDER BY t.createdAt DESC")
+    List<Transaction> findAllByUserId(@Param("userId") Long userId);
+
+    // Query successful transactions by userId (for user)
+    @Query("SELECT t FROM Transaction t WHERE " +
+           "(t.senderAccount.user.userId = :userId OR t.receiverAccount.user.userId = :userId) " +
+           "AND t.status = 'SUCCESS' " +
+           "ORDER BY t.createdAt DESC")
+    List<Transaction> findSuccessfulTransactionsByUserId(@Param("userId") Long userId);
 }
