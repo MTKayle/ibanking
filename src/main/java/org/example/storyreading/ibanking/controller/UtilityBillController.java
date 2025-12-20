@@ -4,15 +4,18 @@ import jakarta.validation.Valid;
 import org.example.storyreading.ibanking.dto.utility.UtilityBillPaymentRequestDTO;
 import org.example.storyreading.ibanking.dto.utility.UtilityBillPaymentResponseDTO;
 import org.example.storyreading.ibanking.dto.utility.UtilityBillResponseDTO;
+import org.example.storyreading.ibanking.entity.UtilityBillType;
 import org.example.storyreading.ibanking.service.UtilityBillService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/utility-bills")
@@ -27,9 +30,9 @@ public class UtilityBillController {
      */
     @GetMapping("/search")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Map<String, Object>> searchBillByCode(@RequestParam String billCode) {
+    public ResponseEntity<Map<String, Object>> searchBillByCode(@RequestParam String billCode, @RequestParam String billType) {
         try {
-            UtilityBillResponseDTO bill = utilityBillService.findByBillCode(billCode);
+            UtilityBillResponseDTO bill = utilityBillService.findByBillCodeAndBillType(billCode, billType);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
@@ -128,5 +131,27 @@ public class UtilityBillController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
-}
 
+    /**
+     * API lấy tất cả loại hóa đơn (BillType)
+     * GET /api/utility-bills/bill-types
+     */
+    @GetMapping("/bill-types")
+    public ResponseEntity<Map<String, Object>> getAllBillTypes() {
+        List<Map<String, String>> billTypes = Arrays.stream(UtilityBillType.values())
+                .map(type -> {
+                    Map<String, String> typeMap = new HashMap<>();
+                    typeMap.put("value", type.name());
+                    typeMap.put("displayName", type.getDisplayName());
+                    return typeMap;
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("message", "Lấy danh sách loại hóa đơn thành công");
+        response.put("data", billTypes);
+
+        return ResponseEntity.ok(response);
+    }
+}

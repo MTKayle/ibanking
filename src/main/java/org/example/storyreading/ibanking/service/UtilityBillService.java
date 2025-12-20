@@ -41,8 +41,17 @@ public class UtilityBillService {
      * Tìm kiếm hóa đơn theo mã hóa đơn
      */
     @Transactional(readOnly = true)
-    public UtilityBillResponseDTO findByBillCode(String billCode) {
-        UtilityBill bill = utilityBillRepository.findByBillCode(billCode)
+    public UtilityBillResponseDTO findByBillCodeAndBillType(String billCode, String billType) {
+        // Convert String billType sang enum
+        UtilityBillType billTypeEnum;
+        try {
+            billTypeEnum = UtilityBillType.valueOf(billType.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Loại hóa đơn không hợp lệ: " + billType +
+                ". Các loại hợp lệ: ELECTRICITY, WATER, INTERNET, PHONE");
+        }
+
+        UtilityBill bill = utilityBillRepository.findByBillCodeAndBillType(billCode, billTypeEnum)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy hóa đơn với mã: " + billCode));
 
         // KHÔNG update trong readOnly transaction - chỉ convert sang DTO
