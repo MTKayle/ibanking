@@ -2,6 +2,8 @@ package org.example.storyreading.ibanking.service;
 
 import org.example.storyreading.ibanking.dto.DepositRequest;
 import org.example.storyreading.ibanking.dto.DepositResponse;
+import org.example.storyreading.ibanking.dto.WithdrawRequest;
+import org.example.storyreading.ibanking.dto.WithdrawResponse;
 import org.example.storyreading.ibanking.dto.TransferRequest;
 import org.example.storyreading.ibanking.dto.TransferResponse;
 import org.example.storyreading.ibanking.dto.OtpResponse;
@@ -17,6 +19,16 @@ public interface PaymentService {
      * @return deposit response with updated balance
      */
     DepositResponse depositToCheckingAccount(DepositRequest depositRequest);
+
+    /**
+     * Withdraw money from a checking account (for OFFICER)
+     * Uses pessimistic lock to ensure transaction safety
+     * Automatically records transaction in transactions table
+     *
+     * @param withdrawRequest request containing account number and amount
+     * @return withdraw response with updated balance
+     */
+    WithdrawResponse withdrawFromCheckingAccount(WithdrawRequest withdrawRequest);
 
     /**
      * Transfer money between two checking accounts

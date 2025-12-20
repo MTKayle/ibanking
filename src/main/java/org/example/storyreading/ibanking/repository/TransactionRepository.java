@@ -20,22 +20,38 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Transaction> findByReceiverAccount(Account account);
 
     // Query all transactions related to an account (either sender or receiver)
-    @Query("SELECT t FROM Transaction t WHERE t.senderAccount.accountId = :accountId OR t.receiverAccount.accountId = :accountId ORDER BY t.createdAt DESC")
+    @Query("SELECT t FROM Transaction t " +
+           "LEFT JOIN t.senderAccount sa " +
+           "LEFT JOIN t.receiverAccount ra " +
+           "WHERE sa.accountId = :accountId OR ra.accountId = :accountId " +
+           "ORDER BY t.createdAt DESC")
     List<Transaction> findAllByAccountId(@Param("accountId") Long accountId);
 
     // Query by account number
-    @Query("SELECT t FROM Transaction t WHERE t.senderAccount.accountNumber = :accountNumber OR t.receiverAccount.accountNumber = :accountNumber ORDER BY t.createdAt DESC")
+    @Query("SELECT t FROM Transaction t " +
+           "LEFT JOIN t.senderAccount sa " +
+           "LEFT JOIN t.receiverAccount ra " +
+           "WHERE sa.accountNumber = :accountNumber OR ra.accountNumber = :accountNumber " +
+           "ORDER BY t.createdAt DESC")
     List<Transaction> findAllByAccountNumber(@Param("accountNumber") String accountNumber);
 
     // Query all transactions by userId (for officer)
-    @Query("SELECT t FROM Transaction t WHERE " +
-           "t.senderAccount.user.userId = :userId OR t.receiverAccount.user.userId = :userId " +
+    @Query("SELECT t FROM Transaction t " +
+           "LEFT JOIN t.senderAccount sa " +
+           "LEFT JOIN t.receiverAccount ra " +
+           "LEFT JOIN sa.user su " +
+           "LEFT JOIN ra.user ru " +
+           "WHERE su.userId = :userId OR ru.userId = :userId " +
            "ORDER BY t.createdAt DESC")
     List<Transaction> findAllByUserId(@Param("userId") Long userId);
 
     // Query successful transactions by userId (for user)
-    @Query("SELECT t FROM Transaction t WHERE " +
-           "(t.senderAccount.user.userId = :userId OR t.receiverAccount.user.userId = :userId) " +
+    @Query("SELECT t FROM Transaction t " +
+           "LEFT JOIN t.senderAccount sa " +
+           "LEFT JOIN t.receiverAccount ra " +
+           "LEFT JOIN sa.user su " +
+           "LEFT JOIN ra.user ru " +
+           "WHERE (su.userId = :userId OR ru.userId = :userId) " +
            "AND t.status = 'SUCCESS' " +
            "ORDER BY t.createdAt DESC")
     List<Transaction> findSuccessfulTransactionsByUserId(@Param("userId") Long userId);

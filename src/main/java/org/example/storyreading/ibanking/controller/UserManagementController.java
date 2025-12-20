@@ -3,6 +3,7 @@ package org.example.storyreading.ibanking.controller;
 import jakarta.validation.Valid;
 import org.example.storyreading.ibanking.dto.LockUserRequest;
 import org.example.storyreading.ibanking.dto.UpdateUserRequest;
+import org.example.storyreading.ibanking.dto.UpdatePhotoResponse;
 import org.example.storyreading.ibanking.dto.UserResponse;
 import org.example.storyreading.ibanking.dto.SmartFlagsRequest;
 import org.example.storyreading.ibanking.dto.UpdateSmartOtpRequest;
@@ -12,8 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -119,4 +123,47 @@ public class UserManagementController {
         UserResponse updated = userManagementService.updateSmartOtp(userId, request);
         return ResponseEntity.ok(updated);
     }
+
+    /**
+     * Update user photo by user ID - Only OFFICER can access
+     * POST /api/users/{userId}/update-photo
+     * Body: multipart/form-data with "photo" file
+     */
+    @PostMapping("/{userId}/update-photo")
+    @PreAuthorize("hasRole('OFFICER') or hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> updateUserPhoto(
+            @PathVariable Long userId,
+            @RequestParam("photo") MultipartFile photo) {
+        try {
+            if (photo == null || photo.isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "Ảnh không được để trống");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+
+            UpdatePhotoResponse response = userManagementService.updateUserPhoto(userId, photo);
+
+            Map<String, Object> successResponse = new HashMap<>();
+            successResponse.put("success", true);
+            successResponse.put("message", response.getMessage());
+            successResponse.put("data", response);
+
+            return ResponseEntity.ok(successResponse);
+        } catch (RuntimeException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    //get user by phone number
+    @GetMapping("/by-phone/{phone}")
+    @PreAuthorize("hasRole('OFFICER')")
+    public ResponseEntity<UserResponse> getUserByPhone(@PathVariable String phone) {
+        UserResponse user = userManagementService.getUserByPhone(phone);
+        return ResponseEntity.ok(user);
+    }
+
 }

@@ -5,6 +5,7 @@ import org.example.storyreading.ibanking.dto.LockUserRequest;
 import org.example.storyreading.ibanking.dto.UpdateSmartOtpRequest;
 import org.example.storyreading.ibanking.dto.SmartFlagsRequest;
 import org.example.storyreading.ibanking.dto.UpdateUserRequest;
+import org.example.storyreading.ibanking.dto.UpdatePhotoResponse;
 import org.example.storyreading.ibanking.dto.UserResponse;
 import org.example.storyreading.ibanking.entity.User;
 import org.example.storyreading.ibanking.exception.ResourceAlreadyExistsException;
@@ -13,6 +14,7 @@ import org.example.storyreading.ibanking.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -22,6 +24,9 @@ public class UserManagementService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     @Transactional(readOnly = true)
     public List<UserResponse> getAllUsers() {
@@ -154,6 +159,42 @@ public class UserManagementService {
         user.setSmatOTP(request.getSmatOTP());
         User updated = userRepository.save(user);
         return mapToUserResponse(updated);
+    }
+
+    @Transactional
+    public UpdatePhotoResponse updateUserPhoto(Long userId, MultipartFile photoFile) {
+        // Tìm user theo userId
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy user với ID: " + userId));
+
+        try {
+            // Upload ảnh lên Cloudinary
+            String photoUrl = cloudinaryService.uploadImage(photoFile, user.getUserId());
+
+            // Cập nhật photoUrl trong database
+            user.setPhotoUrl(photoUrl);
+            userRepository.save(user);
+
+            // Tạo response
+            UpdatePhotoResponse response = new UpdatePhotoResponse();
+            response.setUserId(user.getUserId());
+            response.setPhone(user.getPhone());
+            response.setPhotoUrl(photoUrl);
+            response.setMessage("Cập nhật ảnh thành công");
+
+            return response;
+
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi upload và cập nhật ảnh: " + e.getMessage(), e);
+        }
+    }
+
+    //get user by phone number
+    @Transactional(readOnly = true)
+    public UserResponse getUserByPhone(String phone) {
+        User user = userRepository.findByPhone(phone)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with phone: " + phone));
+        return mapToUserResponse(user);
     }
 
     private UserResponse mapToUserResponse(User user) {

@@ -3,6 +3,8 @@ package org.example.storyreading.ibanking.controller;
 import jakarta.validation.Valid;
 import org.example.storyreading.ibanking.dto.DepositRequest;
 import org.example.storyreading.ibanking.dto.DepositResponse;
+import org.example.storyreading.ibanking.dto.WithdrawRequest;
+import org.example.storyreading.ibanking.dto.WithdrawResponse;
 import org.example.storyreading.ibanking.dto.TransferRequest;
 import org.example.storyreading.ibanking.dto.TransferResponse;
 import org.example.storyreading.ibanking.dto.OtpResponse;
@@ -29,6 +31,16 @@ public class PaymentController {
     @PreAuthorize("hasRole('OFFICER') or hasRole('ADMIN')")
     public ResponseEntity<DepositResponse> depositToChecking(@Valid @RequestBody DepositRequest depositRequest) {
         DepositResponse response = paymentService.depositToCheckingAccount(depositRequest);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+    /**
+     * Rút tiền từ tài khoản checking (dành cho OFFICER)
+     */
+    @PostMapping("/checking/withdraw")
+    @PreAuthorize("hasRole('OFFICER') or hasRole('ADMIN')")
+    public ResponseEntity<WithdrawResponse> withdrawFromChecking(@Valid @RequestBody WithdrawRequest withdrawRequest) {
+        WithdrawResponse response = paymentService.withdrawFromCheckingAccount(withdrawRequest);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
