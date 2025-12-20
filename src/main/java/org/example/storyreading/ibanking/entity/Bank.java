@@ -34,6 +34,9 @@ public class Bank {
     @Column(name = "bank_name", nullable = false, length = 100)
     private String bankName;
 
+    @Column(name = "logo_url", columnDefinition = "TEXT")
+    private String logoUrl;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -44,6 +47,13 @@ public class Bank {
         this.bankBin = bankBin;
         this.bankCode = bankCode;
         this.bankName = bankName;
+    }
+
+    public Bank(String bankBin, String bankCode, String bankName, String logoUrl) {
+        this.bankBin = bankBin;
+        this.bankCode = bankCode;
+        this.bankName = bankName;
+        this.logoUrl = logoUrl;
     }
 
     @PrePersist
@@ -87,5 +97,12 @@ public class Bank {
     public Instant getCreatedAt() {
         return createdAt;
     }
-}
 
+    public String getLogoUrl() {
+        return logoUrl;
+    }
+
+    public void setLogoUrl(String logoUrl) {
+        this.logoUrl = logoUrl;
+    }
+}

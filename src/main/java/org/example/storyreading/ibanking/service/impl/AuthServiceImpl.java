@@ -384,4 +384,14 @@ public class AuthServiceImpl implements AuthService {
         // Kiểm tra xem user có bật fingerprint login không
         return user.getFingerprintLoginEnabled() != null && user.getFingerprintLoginEnabled();
     }
+
+    @Override
+    public boolean checkPhoneExists(String phone) {
+        return userRepository.existsByPhone(phone);
+    }
+
+    @Override
+    public boolean checkCccdExists(String cccd) {
+        return userRepository.existsByCccdNumber(cccd);
+    }
 }

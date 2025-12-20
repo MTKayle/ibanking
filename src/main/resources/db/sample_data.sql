@@ -209,85 +209,80 @@ INSERT INTO cinema_halls (cinema_id, hall_name, total_seats) VALUES
 -- Rows D-G: VIP (100,000 VND)
 -- Rows H-J: Couple seats (150,000 VND for 2 people)
 
--- Row A (Standard)
 INSERT INTO seats (hall_id, row_label, seat_number, seat_type, base_price) VALUES
-(1, 'A', 1, 'STANDARD', 70000), (1, 'A', 2, 'STANDARD', 70000), (1, 'A', 3, 'STANDARD', 70000),
-(1, 'A', 4, 'STANDARD', 70000), (1, 'A', 5, 'STANDARD', 70000), (1, 'A', 6, 'STANDARD', 70000),
-(1, 'A', 7, 'STANDARD', 70000), (1, 'A', 8, 'STANDARD', 70000), (1, 'A', 9, 'STANDARD', 70000),
-(1, 'A', 10, 'STANDARD', 70000), (1, 'A', 11, 'STANDARD', 70000), (1, 'A', 12, 'STANDARD', 70000),
-(1, 'A', 13, 'STANDARD', 70000), (1, 'A', 14, 'STANDARD', 70000), (1, 'A', 15, 'STANDARD', 70000);
+-- Row A
+(1,'A',1,'STANDARD',70000),(1,'A',2,'STANDARD',70000),(1,'A',3,'STANDARD',70000),
+(1,'A',4,'STANDARD',70000),(1,'A',5,'STANDARD',70000),(1,'A',6,'STANDARD',70000),
+(1,'A',7,'STANDARD',70000),(1,'A',8,'STANDARD',70000),(1,'A',9,'STANDARD',70000),
+(1,'A',10,'STANDARD',70000),(1,'A',11,'STANDARD',70000),(1,'A',12,'STANDARD',70000),
+(1,'A',13,'STANDARD',70000),(1,'A',14,'STANDARD',70000),(1,'A',15,'STANDARD',70000),
 
--- Row B (Standard)
-INSERT INTO seats (hall_id, row_label, seat_number, seat_type, base_price) VALUES
-(1, 'B', 1, 'STANDARD', 70000), (1, 'B', 2, 'STANDARD', 70000), (1, 'B', 3, 'STANDARD', 70000),
-(1, 'B', 4, 'STANDARD', 70000), (1, 'B', 5, 'STANDARD', 70000), (1, 'B', 6, 'STANDARD', 70000),
-(1, 'B', 7, 'STANDARD', 70000), (1, 'B', 8, 'STANDARD', 70000), (1, 'B', 9, 'STANDARD', 70000),
-(1, 'B', 10, 'STANDARD', 70000), (1, 'B', 11, 'STANDARD', 70000), (1, 'B', 12, 'STANDARD', 70000),
-(1, 'B', 13, 'STANDARD', 70000), (1, 'B', 14, 'STANDARD', 70000), (1, 'B', 15, 'STANDARD', 70000);
+-- Row B
+(1,'B',1,'STANDARD',70000),(1,'B',2,'STANDARD',70000),(1,'B',3,'STANDARD',70000),
+(1,'B',4,'STANDARD',70000),(1,'B',5,'STANDARD',70000),(1,'B',6,'STANDARD',70000),
+(1,'B',7,'STANDARD',70000),(1,'B',8,'STANDARD',70000),(1,'B',9,'STANDARD',70000),
+(1,'B',10,'STANDARD',70000),(1,'B',11,'STANDARD',70000),(1,'B',12,'STANDARD',70000),
+(1,'B',13,'STANDARD',70000),(1,'B',14,'STANDARD',70000),(1,'B',15,'STANDARD',70000),
 
--- Row C (Standard)
-INSERT INTO seats (hall_id, row_label, seat_number, seat_type, base_price) VALUES
-(1, 'C', 1, 'STANDARD', 70000), (1, 'C', 2, 'STANDARD', 70000), (1, 'C', 3, 'STANDARD', 70000),
-(1, 'C', 4, 'STANDARD', 70000), (1, 'C', 5, 'STANDARD', 70000), (1, 'C', 6, 'STANDARD', 70000),
-(1, 'C', 7, 'STANDARD', 70000), (1, 'C', 8, 'STANDARD', 70000), (1, 'C', 9, 'STANDARD', 70000),
-(1, 'C', 10, 'STANDARD', 70000), (1, 'C', 11, 'STANDARD', 70000), (1, 'C', 12, 'STANDARD', 70000),
-(1, 'C', 13, 'STANDARD', 70000), (1, 'C', 14, 'STANDARD', 70000), (1, 'C', 15, 'STANDARD', 70000);
+-- Row C
+(1,'C',1,'STANDARD',70000),(1,'C',2,'STANDARD',70000),(1,'C',3,'STANDARD',70000),
+(1,'C',4,'STANDARD',70000),(1,'C',5,'STANDARD',70000),(1,'C',6,'STANDARD',70000),
+(1,'C',7,'STANDARD',70000),(1,'C',8,'STANDARD',70000),(1,'C',9,'STANDARD',70000),
+(1,'C',10,'STANDARD',70000),(1,'C',11,'STANDARD',70000),(1,'C',12,'STANDARD',70000),
+(1,'C',13,'STANDARD',70000),(1,'C',14,'STANDARD',70000),(1,'C',15,'STANDARD',70000);
 
--- Row D (VIP - Sweet Spot)
-INSERT INTO seats (hall_id, row_label, seat_number, seat_type, base_price) VALUES
-(1, 'D', 1, 'VIP', 100000), (1, 'D', 2, 'VIP', 100000), (1, 'D', 3, 'VIP', 100000),
-(1, 'D', 4, 'VIP', 100000), (1, 'D', 5, 'VIP', 100000), (1, 'D', 6, 'VIP', 100000),
-(1, 'D', 7, 'VIP', 100000), (1, 'D', 8, 'VIP', 100000), (1, 'D', 9, 'VIP', 100000),
-(1, 'D', 10, 'VIP', 100000), (1, 'D', 11, 'VIP', 100000), (1, 'D', 12, 'VIP', 100000),
-(1, 'D', 13, 'VIP', 100000), (1, 'D', 14, 'VIP', 100000), (1, 'D', 15, 'VIP', 100000);
 
--- Row E (VIP)
-INSERT INTO seats (hall_id, row_label, seat_number, seat_type, base_price) VALUES
-(1, 'E', 1, 'VIP', 100000), (1, 'E', 2, 'VIP', 100000), (1, 'E', 3, 'VIP', 100000),
-(1, 'E', 4, 'VIP', 100000), (1, 'E', 5, 'VIP', 100000), (1, 'E', 6, 'VIP', 100000),
-(1, 'E', 7, 'VIP', 100000), (1, 'E', 8, 'VIP', 100000), (1, 'E', 9, 'VIP', 100000),
-(1, 'E', 10, 'VIP', 100000), (1, 'E', 11, 'VIP', 100000), (1, 'E', 12, 'VIP', 100000),
-(1, 'E', 13, 'VIP', 100000), (1, 'E', 14, 'VIP', 100000), (1, 'E', 15, 'VIP', 100000);
 
--- Row F (VIP)
-INSERT INTO seats (hall_id, row_label, seat_number, seat_type, base_price) VALUES
-(1, 'F', 1, 'VIP', 100000), (1, 'F', 2, 'VIP', 100000), (1, 'F', 3, 'VIP', 100000),
-(1, 'F', 4, 'VIP', 100000), (1, 'F', 5, 'VIP', 100000), (1, 'F', 6, 'VIP', 100000),
-(1, 'F', 7, 'VIP', 100000), (1, 'F', 8, 'VIP', 100000), (1, 'F', 9, 'VIP', 100000),
-(1, 'F', 10, 'VIP', 100000), (1, 'F', 11, 'VIP', 100000), (1, 'F', 12, 'VIP', 100000),
-(1, 'F', 13, 'VIP', 100000), (1, 'F', 14, 'VIP', 100000), (1, 'F', 15, 'VIP', 100000);
 
--- Row G (VIP)
 INSERT INTO seats (hall_id, row_label, seat_number, seat_type, base_price) VALUES
-(1, 'G', 1, 'VIP', 100000), (1, 'G', 2, 'VIP', 100000), (1, 'G', 3, 'VIP', 100000),
-(1, 'G', 4, 'VIP', 100000), (1, 'G', 5, 'VIP', 100000), (1, 'G', 6, 'VIP', 100000),
-(1, 'G', 7, 'VIP', 100000), (1, 'G', 8, 'VIP', 100000), (1, 'G', 9, 'VIP', 100000),
-(1, 'G', 10, 'VIP', 100000), (1, 'G', 11, 'VIP', 100000), (1, 'G', 12, 'VIP', 100000),
-(1, 'G', 13, 'VIP', 100000), (1, 'G', 14, 'VIP', 100000), (1, 'G', 15, 'VIP', 100000);
+-- Row D
+(1,'D',1,'VIP',100000),(1,'D',2,'VIP',100000),(1,'D',3,'VIP',100000),
+(1,'D',4,'VIP',100000),(1,'D',5,'VIP',100000),(1,'D',6,'VIP',100000),
+(1,'D',7,'VIP',100000),(1,'D',8,'VIP',100000),(1,'D',9,'VIP',100000),
+(1,'D',10,'VIP',100000),(1,'D',11,'VIP',100000),(1,'D',12,'VIP',100000),
+(1,'D',13,'VIP',100000),(1,'D',14,'VIP',100000),(1,'D',15,'VIP',100000),
 
--- Row H (Couple - 7 pairs + 1 single = 15 seats)
-INSERT INTO seats (hall_id, row_label, seat_number, seat_type, base_price) VALUES
-(1, 'H', 1, 'COUPLE', 150000), (1, 'H', 2, 'COUPLE', 150000), (1, 'H', 3, 'COUPLE', 150000),
-(1, 'H', 4, 'COUPLE', 150000), (1, 'H', 5, 'COUPLE', 150000), (1, 'H', 6, 'COUPLE', 150000),
-(1, 'H', 7, 'COUPLE', 150000), (1, 'H', 8, 'COUPLE', 150000), (1, 'H', 9, 'COUPLE', 150000),
-(1, 'H', 10, 'COUPLE', 150000), (1, 'H', 11, 'COUPLE', 150000), (1, 'H', 12, 'COUPLE', 150000),
-(1, 'H', 13, 'COUPLE', 150000), (1, 'H', 14, 'COUPLE', 150000), (1, 'H', 15, 'STANDARD', 70000);
+-- Row E
+(1,'E',1,'VIP',100000),(1,'E',2,'VIP',100000),(1,'E',3,'VIP',100000),
+(1,'E',4,'VIP',100000),(1,'E',5,'VIP',100000),(1,'E',6,'VIP',100000),
+(1,'E',7,'VIP',100000),(1,'E',8,'VIP',100000),(1,'E',9,'VIP',100000),
+(1,'E',10,'VIP',100000),(1,'E',11,'VIP',100000),(1,'E',12,'VIP',100000),
+(1,'E',13,'VIP',100000),(1,'E',14,'VIP',100000),(1,'E',15,'VIP',100000),
 
--- Row I (Couple)
-INSERT INTO seats (hall_id, row_label, seat_number, seat_type, base_price) VALUES
-(1, 'I', 1, 'COUPLE', 150000), (1, 'I', 2, 'COUPLE', 150000), (1, 'I', 3, 'COUPLE', 150000),
-(1, 'I', 4, 'COUPLE', 150000), (1, 'I', 5, 'COUPLE', 150000), (1, 'I', 6, 'COUPLE', 150000),
-(1, 'I', 7, 'COUPLE', 150000), (1, 'I', 8, 'COUPLE', 150000), (1, 'I', 9, 'COUPLE', 150000),
-(1, 'I', 10, 'COUPLE', 150000), (1, 'I', 11, 'COUPLE', 150000), (1, 'I', 12, 'COUPLE', 150000),
-(1, 'I', 13, 'COUPLE', 150000), (1, 'I', 14, 'COUPLE', 150000), (1, 'I', 15, 'STANDARD', 70000);
+-- Row F
+(1,'F',1,'VIP',100000),(1,'F',2,'VIP',100000),(1,'F',3,'VIP',100000),
+(1,'F',4,'VIP',100000),(1,'F',5,'VIP',100000),(1,'F',6,'VIP',100000),
+(1,'F',7,'VIP',100000),(1,'F',8,'VIP',100000),(1,'F',9,'VIP',100000),
+(1,'F',10,'VIP',100000),(1,'F',11,'VIP',100000),(1,'F',12,'VIP',100000),
+(1,'F',13,'VIP',100000),(1,'F',14,'VIP',100000),(1,'F',15,'VIP',100000),
 
--- Row J (Couple)
+-- Row G
+(1,'G',1,'VIP',100000),(1,'G',2,'VIP',100000),(1,'G',3,'VIP',100000),
+(1,'G',4,'VIP',100000),(1,'G',5,'VIP',100000),(1,'G',6,'VIP',100000),
+(1,'G',7,'VIP',100000),(1,'G',8,'VIP',100000),(1,'G',9,'VIP',100000),
+(1,'G',10,'VIP',100000),(1,'G',11,'VIP',100000),(1,'G',12,'VIP',100000),
+(1,'G',13,'VIP',100000),(1,'G',14,'VIP',100000),(1,'G',15,'VIP',100000),
+
+-- Row H
+(1,'H',1,'VIP',100000),(1,'H',2,'VIP',100000),(1,'H',3,'VIP',100000),
+(1,'H',4,'VIP',100000),(1,'H',5,'VIP',100000),(1,'H',6,'VIP',100000),
+(1,'H',7,'VIP',100000),(1,'H',8,'VIP',100000),(1,'H',9,'VIP',100000),
+(1,'H',10,'VIP',100000),(1,'H',11,'VIP',100000),(1,'H',12,'VIP',100000),
+(1,'H',13,'VIP',100000),(1,'H',14,'VIP',100000),(1,'H',15,'VIP',100000),
+
+-- Row I
+(1,'I',1,'VIP',100000),(1,'I',2,'VIP',100000),(1,'I',3,'VIP',100000),
+(1,'I',4,'VIP',100000),(1,'I',5,'VIP',100000),(1,'I',6,'VIP',100000),
+(1,'I',7,'VIP',100000),(1,'I',8,'VIP',100000),(1,'I',9,'VIP',100000),
+(1,'I',10,'VIP',100000),(1,'I',11,'VIP',100000),(1,'I',12,'VIP',100000),
+(1,'I',13,'VIP',100000),(1,'I',14,'VIP',100000),(1,'I',15,'VIP',100000);
+
 INSERT INTO seats (hall_id, row_label, seat_number, seat_type, base_price) VALUES
-(1, 'J', 1, 'COUPLE', 150000), (1, 'J', 2, 'COUPLE', 150000), (1, 'J', 3, 'COUPLE', 150000),
-(1, 'J', 4, 'COUPLE', 150000), (1, 'J', 5, 'COUPLE', 150000), (1, 'J', 6, 'COUPLE', 150000),
-(1, 'J', 7, 'COUPLE', 150000), (1, 'J', 8, 'COUPLE', 150000), (1, 'J', 9, 'COUPLE', 150000),
-(1, 'J', 10, 'COUPLE', 150000), (1, 'J', 11, 'COUPLE', 150000), (1, 'J', 12, 'COUPLE', 150000),
-(1, 'J', 13, 'COUPLE', 150000), (1, 'J', 14, 'COUPLE', 150000), (1, 'J', 15, 'STANDARD', 70000);
+                                                                               (1,'J',1,'COUPLE',150000),(1,'J',2,'COUPLE',150000),(1,'J',3,'COUPLE',150000),
+                                                                               (1,'J',4,'COUPLE',150000),(1,'J',5,'COUPLE',150000),(1,'J',6,'COUPLE',150000),
+                                                                               (1,'J',7,'COUPLE',150000),(1,'J',8,'COUPLE',150000),(1,'K',9,'COUPLE',150000),
+                                                                               (1,'K',10,'COUPLE',150000),(1,'K',11,'COUPLE',150000),(1,'K',12,'COUPLE',150000),
+                                                                               (1,'K',13,'COUPLE',150000),(1,'K',14,'COUPLE',150000),(1,'K',15,'COUPLE',150000);
 
 -- NOTE: Tương tự cho các phòng chiếu khác (hall_id 2-23), bạn có thể tạo thêm seats với cùng pattern
 -- Để tiết kiệm thời gian, tôi sẽ tạo sample cho một vài phòng quan trọng
