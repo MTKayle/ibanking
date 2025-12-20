@@ -8,6 +8,8 @@ import org.example.storyreading.ibanking.dto.UserResponse;
 import org.example.storyreading.ibanking.dto.SmartFlagsRequest;
 import org.example.storyreading.ibanking.dto.UpdateSmartOtpRequest;
 import org.example.storyreading.ibanking.dto.FeatureStatusResponse;
+import org.example.storyreading.ibanking.dto.UpdatePhoneRequest;
+import org.example.storyreading.ibanking.dto.UpdateCccdRequest;
 import org.example.storyreading.ibanking.service.UserManagementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -164,6 +166,66 @@ public class UserManagementController {
     public ResponseEntity<UserResponse> getUserByPhone(@PathVariable String phone) {
         UserResponse user = userManagementService.getUserByPhone(phone);
         return ResponseEntity.ok(user);
+    }
+
+    /**
+     * Get user by CCCD number - Only OFFICER can access
+     */
+    @GetMapping("/by-cccd/{cccdNumber}")
+    @PreAuthorize("hasRole('OFFICER')")
+    public ResponseEntity<UserResponse> getUserByCccd(@PathVariable String cccdNumber) {
+        UserResponse user = userManagementService.getUserByCccd(cccdNumber);
+        return ResponseEntity.ok(user);
+    }
+
+    /**
+     * Update phone number - Only OFFICER can access
+     */
+    @PatchMapping("/{userId}/phone")
+    @PreAuthorize("hasRole('OFFICER')")
+    public ResponseEntity<Map<String, Object>> updatePhoneNumber(
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdatePhoneRequest request) {
+        try {
+            UserResponse updatedUser = userManagementService.updatePhoneNumber(userId, request.getPhone());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Phone number updated successfully");
+            response.put("data", updatedUser);
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    /**
+     * Update CCCD number - Only OFFICER can access
+     */
+    @PatchMapping("/{userId}/cccd")
+    @PreAuthorize("hasRole('OFFICER')")
+    public ResponseEntity<Map<String, Object>> updateCccdNumber(
+            @PathVariable Long userId,
+            @Valid @RequestBody UpdateCccdRequest request) {
+        try {
+            UserResponse updatedUser = userManagementService.updateCccdNumber(userId, request.getCccdNumber());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "CCCD number updated successfully");
+            response.put("data", updatedUser);
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
     }
 
 }
