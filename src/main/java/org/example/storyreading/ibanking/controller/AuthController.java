@@ -121,6 +121,36 @@ public class AuthController {
         return ResponseEntity.ok(new FeatureStatusResponse(enabled));
     }
 
+    /**
+     * Kiểm tra số điện thoại đã tồn tại chưa
+     * API này dùng để validate trước khi đăng ký
+     */
+    @GetMapping("/check-phone-exists")
+    public ResponseEntity<?> checkPhoneExists(@RequestParam("phone") String phone) {
+        boolean exists = authService.checkPhoneExists(phone);
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("exists", exists);
+        response.put("message", exists ? "Số điện thoại đã tồn tại" : "Số điện thoại khả dụng");
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Kiểm tra số CCCD đã tồn tại chưa
+     * API này dùng để validate trước khi đăng ký
+     */
+    @GetMapping("/check-cccd-exists")
+    public ResponseEntity<?> checkCccdExists(@RequestParam("cccd") String cccd) {
+        boolean exists = authService.checkCccdExists(cccd);
+
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("exists", exists);
+        response.put("message", exists ? "Số CCCD đã tồn tại" : "Số CCCD khả dụng");
+
+        return ResponseEntity.ok(response);
+    }
+
     private boolean isImageFile(MultipartFile file) {
         String contentType = file.getContentType();
         return contentType != null && (

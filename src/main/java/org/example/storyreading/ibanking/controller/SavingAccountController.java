@@ -84,9 +84,38 @@ public class SavingAccountController {
      * Lấy danh sách tất cả kỳ hạn với lãi suất hiện tại (public API)
      */
     @GetMapping("/terms")
-    public ResponseEntity<List<SavingTermConfig>> getAllSavingTerms() {
-        List<SavingTermConfig> terms = savingAccountService.getAllSavingTerms();
-        return ResponseEntity.ok(terms);
+    public ResponseEntity<?> getAllSavingTerms() {
+        try {
+            List<SavingTermConfig> terms = savingAccountService.getAllSavingTerms();
+
+            // Convert sang DTO response với thông tin đầy đủ hơn
+            List<SavingTermResponse> responses = terms.stream()
+                    .map(term -> {
+                        SavingTermResponse response = new SavingTermResponse();
+                        response.setTermId(term.getTermId());
+                        response.setTermType(term.getTermType().name());
+                        response.setMonths(term.getTermType().getMonths());
+                        response.setDisplayName(term.getTermType().getDisplayName());
+                        response.setInterestRate(term.getInterestRate());
+                        response.setUpdatedBy(term.getUpdatedBy());
+                        response.setUpdatedAt(term.getUpdatedAt() != null ? term.getUpdatedAt().toString() : null);
+                        return response;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+
+            java.util.Map<String, Object> result = new java.util.HashMap<>();
+            result.put("success", true);
+            result.put("message", "Lấy danh sách kỳ hạn thành công");
+            result.put("data", responses);
+            result.put("total", responses.size());
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
     }
 
     /**

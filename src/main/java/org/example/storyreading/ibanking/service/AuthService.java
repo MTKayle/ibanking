@@ -20,4 +20,8 @@ public interface AuthService {
     AuthResponse refreshToken(String refreshToken);
 
     boolean isFingerprintLoginEnabledByPhone(String phone);
+
+    boolean checkPhoneExists(String phone);
+
+    boolean checkCccdExists(String cccd);
 }

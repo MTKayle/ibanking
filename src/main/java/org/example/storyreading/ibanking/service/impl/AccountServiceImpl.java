@@ -70,6 +70,11 @@ public class AccountServiceImpl implements AccountService {
             bankName = bank.getBankName();
         }
 
+        //check if bankBIN != "770717
+        if (bankBin.equals("770717")){
+            throw new RuntimeException("Không tìm thấy thông tin ngân hàng cho tài khoản: " + accountNumber);
+        }
+
         // Tạo response
         AccountInfoResponse response = new AccountInfoResponse();
         response.setAccountNumber(account.getAccountNumber());

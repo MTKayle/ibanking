@@ -16,6 +16,11 @@ public class TransactionHistoryDTO {
     private String status;
     private Instant createdAt;
 
+    // Thông tin bổ sung cho giao dịch ngoài ngân hàng
+    private String receiverBankName;
+    private String receiverBankBin;
+    private Instant completedAt;
+
     // Getters and Setters
     public Long getTransactionId() {
         return transactionId;
@@ -104,5 +109,28 @@ public class TransactionHistoryDTO {
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
-}
 
+    public String getReceiverBankName() {
+        return receiverBankName;
+    }
+
+    public void setReceiverBankName(String receiverBankName) {
+        this.receiverBankName = receiverBankName;
+    }
+
+    public String getReceiverBankBin() {
+        return receiverBankBin;
+    }
+
+    public void setReceiverBankBin(String receiverBankBin) {
+        this.receiverBankBin = receiverBankBin;
+    }
+
+    public Instant getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(Instant completedAt) {
+        this.completedAt = completedAt;
+    }
+}
