@@ -3,8 +3,7 @@ package org.example.storyreading.ibanking.entity;
 public enum UtilityBillType {
     ELECTRICITY("Tiền điện"),
     WATER("Tiền nước"),
-    INTERNET("Internet"),
-    PHONE("Điện thoại");
+    INTERNET("Internet");
 
     private final String displayName;
 

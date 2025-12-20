@@ -2,7 +2,10 @@ package org.example.storyreading.ibanking.controller;
 
 import jakarta.validation.Valid;
 import org.example.storyreading.ibanking.dto.*;
+import org.example.storyreading.ibanking.entity.CollateralType;
 import org.example.storyreading.ibanking.entity.MortgageAccount;
+import org.example.storyreading.ibanking.entity.MortgageInterestRate;
+import org.example.storyreading.ibanking.repository.MortgageInterestRateRepository;
 import org.example.storyreading.ibanking.service.MortgageAccountService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,7 +14,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/mortgage")
@@ -19,6 +26,9 @@ public class MortgageAccountController {
 
     @Autowired
     private MortgageAccountService mortgageAccountService;
+
+    @Autowired
+    private MortgageInterestRateRepository mortgageInterestRateRepository;
 
     /**
      * Tạo tài khoản vay thế chấp mới - Chỉ nhân viên
@@ -143,5 +153,37 @@ public class MortgageAccountController {
         return ResponseEntity.ok(responses);
     }
 
+    /**
+     * Lấy danh sách tất cả loại tài sản thế chấp (CollateralType)
+     */
+    @GetMapping("/collateral-types")
+    public ResponseEntity<Map<String, Object>> getAllCollateralTypes() {
+        List<Map<String, String>> collateralTypes = Arrays.stream(CollateralType.values())
+                .map(type -> {
+                    Map<String, String> typeMap = new HashMap<>();
+                    typeMap.put("value", type.name());
+                    typeMap.put("displayName", type.getDisplayName());
+                    return typeMap;
+                })
+                .collect(Collectors.toList());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", collateralTypes);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Lấy danh sách tất cả lãi suất vay theo kỳ hạn (MortgageInterestRate)
+     */
+    @GetMapping("/interest-rates")
+    public ResponseEntity<Map<String, Object>> getAllInterestRates() {
+        List<MortgageInterestRate> interestRates = mortgageInterestRateRepository.findAll();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", interestRates);
+        return ResponseEntity.ok(response);
+    }
 
 }

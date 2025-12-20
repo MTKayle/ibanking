@@ -3,6 +3,7 @@ package org.example.storyreading.ibanking.repository;
 import jakarta.persistence.LockModeType;
 import org.example.storyreading.ibanking.entity.UtilityBill;
 import org.example.storyreading.ibanking.entity.UtilityBillStatus;
+import org.example.storyreading.ibanking.entity.UtilityBillType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -16,10 +17,7 @@ import java.util.Optional;
 @Repository
 public interface UtilityBillRepository extends JpaRepository<UtilityBill, Long> {
 
-    /**
-     * Tìm hóa đơn theo mã hóa đơn
-     */
-    Optional<UtilityBill> findByBillCode(String billCode);
+    Optional<UtilityBill> findByBillCodeAndBillType(String billCode, UtilityBillType billType);
 
     /**
      * Tìm hóa đơn theo mã hóa đơn với PESSIMISTIC LOCK (SELECT FOR UPDATE)
