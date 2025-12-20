@@ -197,6 +197,58 @@ public class UserManagementService {
         return mapToUserResponse(user);
     }
 
+    //get user by cccd number
+    @Transactional(readOnly = true)
+    public UserResponse getUserByCccd(String cccdNumber) {
+        User user = userRepository.findByCccdNumber(cccdNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with CCCD: " + cccdNumber));
+        return mapToUserResponse(user);
+    }
+
+    //update phone number
+    @Transactional
+    public UserResponse updatePhoneNumber(Long userId, String newPhone) {
+        if (newPhone == null || newPhone.isEmpty()) {
+            throw new IllegalArgumentException("Phone number must not be empty");
+        }
+
+        // Check if phone already exists for another user
+        userRepository.findByPhone(newPhone).ifPresent(existingUser -> {
+            if (!existingUser.getUserId().equals(userId)) {
+                throw new ResourceAlreadyExistsException("Phone number already in use");
+            }
+        });
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        user.setPhone(newPhone);
+        User updatedUser = userRepository.save(user);
+        return mapToUserResponse(updatedUser);
+    }
+
+    //update cccd number
+    @Transactional
+    public UserResponse updateCccdNumber(Long userId, String newCccd) {
+        if (newCccd == null || newCccd.isEmpty()) {
+            throw new IllegalArgumentException("CCCD number must not be empty");
+        }
+
+        // Check if CCCD already exists for another user
+        userRepository.findByCccdNumber(newCccd).ifPresent(existingUser -> {
+            if (!existingUser.getUserId().equals(userId)) {
+                throw new ResourceAlreadyExistsException("CCCD number already in use");
+            }
+        });
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        user.setCccdNumber(newCccd);
+        User updatedUser = userRepository.save(user);
+        return mapToUserResponse(updatedUser);
+    }
+
     private UserResponse mapToUserResponse(User user) {
         UserResponse response = new UserResponse();
         response.setUserId(user.getUserId());
