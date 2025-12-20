@@ -2,6 +2,8 @@ package org.example.storyreading.ibanking.service.impl;
 
 import org.example.storyreading.ibanking.dto.DepositRequest;
 import org.example.storyreading.ibanking.dto.DepositResponse;
+import org.example.storyreading.ibanking.dto.WithdrawRequest;
+import org.example.storyreading.ibanking.dto.WithdrawResponse;
 import org.example.storyreading.ibanking.dto.TransferRequest;
 import org.example.storyreading.ibanking.dto.TransferResponse;
 import org.example.storyreading.ibanking.dto.OtpResponse;
@@ -524,6 +526,85 @@ public class PaymentServiceImpl implements PaymentService {
             } catch (Exception ignored) {
                 // Ignore
             }
+            throw e;
+        }
+    }
+
+    @Override
+    @Transactional
+    public WithdrawResponse withdrawFromCheckingAccount(WithdrawRequest withdrawRequest) {
+        String transactionCode = generateTransactionCode();
+
+        try {
+            // Bước 1: Tìm checking account đầu tiên của user với pessimistic lock
+            CheckingAccount checkingAccount = checkingAccountRepository
+                    .findFirstByUserId(withdrawRequest.getUserId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Không tìm thấy tài khoản checking cho user ID: " + withdrawRequest.getUserId()));
+
+            // Lock tài khoản để tránh race condition
+            CheckingAccount lockedAccount = checkingAccountRepository
+                    .findByAccountNumberForUpdate(checkingAccount.getAccount().getAccountNumber())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Không thể lock tài khoản checking"));
+
+            // Bước 2: Kiểm tra trạng thái tài khoản
+            Account account = lockedAccount.getAccount();
+            if (account.getStatus() != Account.Status.active) {
+                throw new IllegalStateException("Tài khoản không ở trạng thái hoạt động. Không thể rút tiền.");
+            }
+
+            // Bước 3: Kiểm tra số dư
+            BigDecimal currentBalance = lockedAccount.getBalance();
+            if (currentBalance.compareTo(withdrawRequest.getAmount()) < 0) {
+                throw new IllegalArgumentException("Số dư không đủ để rút tiền. Số dư hiện tại: " + currentBalance);
+            }
+
+            // Bước 4: TẠO TRANSACTION PENDING
+            transactionCreationService.createPendingTransaction(
+                    account, // Account rút tiền
+                    null, // WITHDRAW không có receiver account
+                    withdrawRequest.getAmount(),
+                    Transaction.TransactionType.WITHDRAW,
+                    withdrawRequest.getDescription() != null
+                            ? withdrawRequest.getDescription()
+                            : "Rút tiền từ tài khoản",
+                    transactionCode
+            );
+
+            // Bước 5: Tính số dư mới
+            BigDecimal newBalance = currentBalance.subtract(withdrawRequest.getAmount());
+
+            // Bước 6: Cập nhật số dư
+            lockedAccount.setBalance(newBalance);
+            checkingAccountRepository.save(lockedAccount);
+
+            // Bước 7: CẬP NHẬT TRANSACTION THÀNH SUCCESS
+            transactionFailureService.markSuccess(transactionCode);
+
+            // Bước 8: Tạo response
+            Instant timestamp = Instant.now();
+            String message = String.format("Rút tiền thành công %.2f từ tài khoản %s. Mã giao dịch: %s",
+                    withdrawRequest.getAmount(), account.getAccountNumber(), transactionCode);
+
+            WithdrawResponse response = new WithdrawResponse();
+            response.setAccountNumber(account.getAccountNumber());
+            response.setWithdrawAmount(withdrawRequest.getAmount());
+            response.setNewBalance(newBalance);
+            response.setDescription(withdrawRequest.getDescription());
+            response.setTimestamp(timestamp);
+            response.setMessage(message);
+
+            return response;
+
+        } catch (Exception e) {
+            // Nếu có lỗi, gọi service riêng để lưu transaction FAILED
+            try {
+                transactionFailureService.markFailed(transactionCode, e);
+            } catch (Exception ignored) {
+                // Ignore error khi lưu failed transaction
+            }
+            // Ném lại exception để rollback transaction database
             throw e;
         }
     }
