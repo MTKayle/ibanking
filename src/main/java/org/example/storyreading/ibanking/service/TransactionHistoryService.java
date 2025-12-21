@@ -330,4 +330,28 @@ public class TransactionHistoryService {
 
         return dto;
     }
+
+    /**
+     * Lấy chi tiết giao dịch theo mã code
+     * Tìm trong cả bảng transactions và external_transfers
+     */
+    @Transactional(readOnly = true)
+    public TransactionHistoryDTO getTransactionByCode(String code) {
+        // 1. Tìm trong bảng transactions (internal)
+        Transaction transaction = transactionRepository.findByCode(code).orElse(null);
+
+        if (transaction != null) {
+            return convertToDTO(transaction);
+        }
+
+        // 2. Nếu không tìm thấy, tìm trong bảng external_transfers
+        ExternalTransfer externalTransfer = externalTransferRepository.findByTransactionCode(code).orElse(null);
+
+        if (externalTransfer != null) {
+            return convertExternalTransferToDTO(externalTransfer);
+        }
+
+        // 3. Không tìm thấy trong cả 2 bảng
+        throw new RuntimeException("Không tìm thấy giao dịch với mã: " + code);
+    }
 }
