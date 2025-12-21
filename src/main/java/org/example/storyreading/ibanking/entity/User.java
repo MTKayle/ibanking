@@ -94,6 +94,10 @@ public class User {
     @Column(name = "face_embedding", columnDefinition = "TEXT")
     private String faceEmbedding;
 
+    // FCM Token for push notifications (mỗi user chỉ có 1 device token tại 1 thời điểm)
+    @Column(name = "fcm_token", columnDefinition = "TEXT")
+    private String fcmToken;
+
     // Bank relationship - mỗi user chỉ có 1 ngân hàng
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bank_id", referencedColumnName = "bank_id")
@@ -258,6 +262,14 @@ public class User {
 
     public void setFaceEmbedding(String faceEmbedding) {
         this.faceEmbedding = faceEmbedding;
+    }
+
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 
     public Bank getBank() {
