@@ -15,6 +15,7 @@ import org.example.storyreading.ibanking.repository.AccountRepository;
 import org.example.storyreading.ibanking.repository.CheckingAccountRepository;
 import org.example.storyreading.ibanking.repository.TransactionRepository;
 import org.example.storyreading.ibanking.security.CustomUserDetails;
+import org.example.storyreading.ibanking.service.NotificationService;
 import org.example.storyreading.ibanking.service.PaymentService;
 import org.example.storyreading.ibanking.service.TransactionCreationService;
 import org.example.storyreading.ibanking.service.TransactionFailureService;
@@ -46,6 +47,9 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Autowired
     private TransactionCreationService transactionCreationService;
+
+    @Autowired
+    private NotificationService notificationService;
 
 
 
@@ -264,6 +268,22 @@ public class PaymentServiceImpl implements PaymentService {
 
             // Bước 8: CẬP NHẬT TRANSACTION THÀNH SUCCESS trong transaction riêng biệt
             transactionFailureService.markSuccess(transactionCode);
+
+            // Bước 8.5: GỬI THÔNG BÁO BIẾN ĐỘNG SỐ DƯ CHO NGƯỜI NHẬN
+            try {
+                Long receiverUserId = lockedReceiver.getAccount().getUser().getUserId();
+                String senderName = lockedSender.getAccount().getUser().getFullName();
+                notificationService.sendBalanceChangeNotification(
+                        receiverUserId,
+                        transferRequest.getAmount(),
+                        senderName,
+                        transactionCode,
+                        receiverNewBalance
+                );
+            } catch (Exception notificationException) {
+                // Log lỗi nhưng không throw exception vì giao dịch đã thành công
+                System.err.println("Lỗi khi gửi thông báo: " + notificationException.getMessage());
+            }
 
             // Bước 9: Tạo response
             TransferResponse response = new TransferResponse();
@@ -502,6 +522,22 @@ public class PaymentServiceImpl implements PaymentService {
 
             // Bước 8: Cập nhật transaction thành SUCCESS
             transactionFailureService.markSuccess(transactionCode);
+
+            // Bước 8.5: GỬI THÔNG BÁO BIẾN ĐỘNG SỐ DƯ CHO NGƯỜI NHẬN
+            try {
+                Long receiverUserId = lockedReceiver.getAccount().getUser().getUserId();
+                String senderName = lockedSender.getAccount().getUser().getFullName();
+                notificationService.sendBalanceChangeNotification(
+                        receiverUserId,
+                        transaction.getAmount(),
+                        senderName,
+                        transactionCode,
+                        receiverNewBalance
+                );
+            } catch (Exception notificationException) {
+                // Log lỗi nhưng không throw exception vì giao dịch đã thành công
+                System.err.println("Lỗi khi gửi thông báo: " + notificationException.getMessage());
+            }
 
             // Bước 9: Tạo response
             TransferResponse response = new TransferResponse();

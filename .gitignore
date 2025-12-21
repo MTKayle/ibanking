@@ -32,5 +32,12 @@ build/
 ### VS Code ###
 .vscode/
 
+# Firebase Admin service account keys - do NOT commit these files
+# Specific credential file used by FirebaseConfig
+src/main/resources/ibanking-mobile-app-firebase-adminsdk-fbsvc-56c5386c82.json
 src/main/resources/firebase-service-account.json
 
+# General patterns to catch other possible Firebase admin JSON files
+src/main/resources/*firebase*-admin*.json
+src/main/resources/*-firebase-adminsdk-*.json
+src/main/resources/*service-account*.json
