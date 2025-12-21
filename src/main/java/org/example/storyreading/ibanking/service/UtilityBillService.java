@@ -166,7 +166,7 @@ public class UtilityBillService {
         response.setAmount(billAmount);
         response.setStatus("SUCCESS");
         response.setPaymentTime(bill.getPaymentTime());
-        response.setTransactionId(savedTransaction.getTransactionId().toString());
+        response.setTransactionId(savedTransaction.getCode());
         response.setBalanceAfter(newBalance);
         response.setMessage("Thanh toán hóa đơn thành công");
 
