@@ -58,6 +58,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/saving/terms").permitAll()
                         .requestMatchers("/api/password/change").permitAll()
+                        .requestMatchers("/api/vnpay/callback").permitAll()
                         .anyRequest().authenticated()
                 );
 
@@ -67,4 +68,3 @@ public class SecurityConfig {
         return http.build();
     }
 }
-

@@ -171,4 +171,29 @@ public class TransactionHistoryController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
+
+    /**
+     * API lấy chi tiết giao dịch theo mã code
+     * GET /api/transactions/code/{code}
+     */
+    @GetMapping("/code/{code}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Map<String, Object>> getTransactionByCode(@PathVariable String code) {
+        try {
+            TransactionHistoryDTO transaction = transactionHistoryService.getTransactionByCode(code);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Lấy chi tiết giao dịch thành công");
+            response.put("data", transaction);
+
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
 }
