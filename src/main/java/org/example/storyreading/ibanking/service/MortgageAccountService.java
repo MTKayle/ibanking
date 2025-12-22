@@ -700,12 +700,27 @@ public class MortgageAccountService {
                 .collect(Collectors.toList());
         response.setPaymentSchedules(scheduleResponses);
 
-        // Tính dư nợ còn lại
+        // Tính dư nợ còn lại ĐÚNG:
+        // Dư nợ còn lại = remainingBalance của kỳ gần nhất chưa trả + gốc của kỳ đó
+        // Phương án này đúng khi không có kỳ quá hạn
         BigDecimal remainingBalance = schedules.stream()
                 .filter(s -> s.getStatus() != MortgagePaymentSchedule.PaymentStatus.PAID)
-                .map(s -> s.getTotalAmount().subtract(s.getPaidAmount()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .min((s1, s2) -> s1.getPeriodNumber().compareTo(s2.getPeriodNumber())) // Lấy kỳ đầu tiên chưa trả
+                .map(schedule -> schedule.getRemainingBalance().add(schedule.getPrincipalAmount())) // remainingBalance + principalAmount
+                .orElse(BigDecimal.ZERO); // Nếu đã trả hết thì = 0
+
         response.setRemainingBalance(remainingBalance);
+
+        // Tính tổng tiền tất toán sớm:
+        // earlySettlementAmount = tổng tiền (gốc + lãi + lãi phạt nếu có) của tất cả các kỳ chưa thanh toán
+        BigDecimal earlySettlementAmount = schedules.stream()
+                .filter(s -> s.getStatus() != MortgagePaymentSchedule.PaymentStatus.PAID)
+                .map(s -> s.getPrincipalAmount()
+                        .add(s.getInterestAmount())
+                        .add(s.getPenaltyAmount() != null ? s.getPenaltyAmount() : BigDecimal.ZERO))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        response.setEarlySettlementAmount(earlySettlementAmount);
 
         return response;
     }
