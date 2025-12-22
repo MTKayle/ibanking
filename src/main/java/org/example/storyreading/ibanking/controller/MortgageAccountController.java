@@ -129,11 +129,11 @@ public class MortgageAccountController {
 
 
     /**
-     * Lấy danh sách tài khoản vay theo trạng thái và số điện thoại (tìm kiếm) - Chỉ nhân viên
+     * Lấy danh sách tài khoản vay theo trạng thái và số điện thoại (tìm kiếm) - user
      */
 
     @GetMapping("/status/{status}/search")
-    @PreAuthorize("hasRole('OFFICER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'OFFICER')")
     public ResponseEntity<List<MortgageAccountResponse>> searchMortgagesByStatusAndPhone(
             @PathVariable MortgageAccount.MortgageStatus status,
             @RequestParam("phone") String phoneNumber) {
