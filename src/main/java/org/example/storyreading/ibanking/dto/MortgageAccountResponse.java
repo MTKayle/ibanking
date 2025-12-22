@@ -28,6 +28,7 @@ public class MortgageAccountResponse {
     private LocalDate createdDate;
     private LocalDate approvalDate;
     private BigDecimal remainingBalance;
+    private BigDecimal earlySettlementAmount; // Tổng tiền tất toán sớm = gốc còn lại + lãi các kỳ chưa thanh toán
     private List<PaymentScheduleResponse> paymentSchedules;
 
     // Getters and setters
@@ -181,6 +182,14 @@ public class MortgageAccountResponse {
 
     public void setRemainingBalance(BigDecimal remainingBalance) {
         this.remainingBalance = remainingBalance;
+    }
+
+    public BigDecimal getEarlySettlementAmount() {
+        return earlySettlementAmount;
+    }
+
+    public void setEarlySettlementAmount(BigDecimal earlySettlementAmount) {
+        this.earlySettlementAmount = earlySettlementAmount;
     }
 
     public List<PaymentScheduleResponse> getPaymentSchedules() {
