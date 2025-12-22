@@ -306,6 +306,17 @@ public class SavingAccountService {
     }
 
     /**
+     * Lấy danh sách tất cả tài khoản tiết kiệm - Chỉ dành cho OFFICER
+     */
+    @Transactional(readOnly = true)
+    public List<SavingAccountResponse> getAllSavingAccounts() {
+        List<SavingAccount> savingAccounts = savingAccountRepository.findAll();
+        return savingAccounts.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Lấy chi tiết tài khoản tiết kiệm
      */
     @Transactional(readOnly = true)

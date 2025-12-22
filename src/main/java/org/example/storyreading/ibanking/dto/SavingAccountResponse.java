@@ -18,6 +18,7 @@ public class SavingAccountResponse {
     private Long userId;
     private String userFullName;
 
+
     public SavingAccountResponse() {
     }
 
@@ -117,5 +118,6 @@ public class SavingAccountResponse {
     public void setUserFullName(String userFullName) {
         this.userFullName = userFullName;
     }
-}
 
+
+}

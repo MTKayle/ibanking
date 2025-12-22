@@ -44,6 +44,17 @@ public class SavingAccountController {
     }
 
     /**
+     * Lấy danh sách tất cả tài khoản tiết kiệm - Chỉ dành cho OFFICER
+     * Bao gồm thông tin khách hàng (họ tên, số điện thoại)
+     */
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('OFFICER')")
+    public ResponseEntity<List<SavingAccountResponse>> getAllSavingAccounts() {
+        List<SavingAccountResponse> accounts = savingAccountService.getAllSavingAccounts();
+        return ResponseEntity.ok(accounts);
+    }
+
+    /**
      * Xem chi tiết sổ tiết kiệm theo số sổ
      * Bao gồm tính toán lãi ước tính khi đáo hạn
      */

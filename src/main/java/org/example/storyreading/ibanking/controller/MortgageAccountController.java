@@ -186,4 +186,27 @@ public class MortgageAccountController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Cập nhật lãi suất vay - Chỉ nhân viên
+     */
+    @PutMapping("/interest-rates/update")
+    @PreAuthorize("hasRole('OFFICER')")
+    public ResponseEntity<Map<String, Object>> updateInterestRate(
+            @Valid @RequestBody UpdateMortgageInterestRateRequest request) {
+        try {
+            MortgageInterestRate updatedRate = mortgageAccountService.updateInterestRate(request);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "Cập nhật lãi suất thành công");
+            response.put("data", updatedRate);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Lỗi khi cập nhật lãi suất: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
 }
