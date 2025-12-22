@@ -16,6 +16,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -23,6 +25,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class TransactionHistoryService {
+
+    // Múi giờ Việt Nam
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     @Autowired
     private TransactionRepository transactionRepository;
@@ -278,7 +283,11 @@ public class TransactionHistoryService {
         dto.setTransactionType(transaction.getTransactionType().name());
         dto.setDescription(transaction.getDescription());
         dto.setStatus(transaction.getStatus().name());
-        dto.setCreatedAt(transaction.getCreatedAt());
+
+        // Chuyển đổi Instant sang LocalDateTime với múi giờ Việt Nam
+        if (transaction.getCreatedAt() != null) {
+            dto.setCreatedAt(LocalDateTime.ofInstant(transaction.getCreatedAt(), VIETNAM_ZONE));
+        }
 
         // Set sender account info (có thể null cho DEPOSIT)
         if (transaction.getSenderAccount() != null) {
@@ -311,8 +320,14 @@ public class TransactionHistoryService {
         dto.setTransactionType("EXTERNAL_TRANSFER"); // Loại giao dịch mới
         dto.setDescription(transfer.getDescription());
         dto.setStatus(transfer.getStatus().name());
-        dto.setCreatedAt(transfer.getCreatedAt());
-        dto.setCompletedAt(transfer.getCompletedAt());
+
+        // Chuyển đổi Instant sang LocalDateTime với múi giờ Việt Nam
+        if (transfer.getCreatedAt() != null) {
+            dto.setCreatedAt(LocalDateTime.ofInstant(transfer.getCreatedAt(), VIETNAM_ZONE));
+        }
+        if (transfer.getCompletedAt() != null) {
+            dto.setCompletedAt(LocalDateTime.ofInstant(transfer.getCompletedAt(), VIETNAM_ZONE));
+        }
 
         // Sender info
         if (transfer.getSenderAccount() != null) {

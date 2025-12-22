@@ -1,7 +1,7 @@
 package org.example.storyreading.ibanking.dto;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public class TransactionHistoryDTO {
     private Long transactionId;
@@ -14,12 +14,12 @@ public class TransactionHistoryDTO {
     private String transactionType;
     private String description;
     private String status;
-    private Instant createdAt;
+    private LocalDateTime createdAt;
 
     // Thông tin bổ sung cho giao dịch ngoài ngân hàng
     private String receiverBankName;
     private String receiverBankBin;
-    private Instant completedAt;
+    private LocalDateTime completedAt;
 
     // Getters and Setters
     public Long getTransactionId() {
@@ -102,11 +102,11 @@ public class TransactionHistoryDTO {
         this.status = status;
     }
 
-    public Instant getCreatedAt() {
+    public LocalDateTime getCreatedAt() {
         return createdAt;
     }
 
-    public void setCreatedAt(Instant createdAt) {
+    public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
     }
 
@@ -126,11 +126,11 @@ public class TransactionHistoryDTO {
         this.receiverBankBin = receiverBankBin;
     }
 
-    public Instant getCompletedAt() {
+    public LocalDateTime getCompletedAt() {
         return completedAt;
     }
 
-    public void setCompletedAt(Instant completedAt) {
+    public void setCompletedAt(LocalDateTime completedAt) {
         this.completedAt = completedAt;
     }
 }
