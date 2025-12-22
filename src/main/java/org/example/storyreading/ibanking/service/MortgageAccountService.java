@@ -754,6 +754,23 @@ public class MortgageAccountService {
         return "MTG" + timestamp + randomPart;
     }
 
+    /**
+     * Cập nhật lãi suất vay - Chỉ nhân viên
+     */
+    @Transactional
+    public MortgageInterestRate updateInterestRate(UpdateMortgageInterestRateRequest request) {
+        // 1. Tìm rate cần cập nhật
+        MortgageInterestRate interestRate = mortgageInterestRateRepository.findById(request.getRateId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy lãi suất với ID: " + request.getRateId()));
+
+        // 2. Cập nhật thông tin (chỉ cập nhật lãi suất và mô tả)
+        interestRate.setInterestRate(request.getInterestRate());
+        interestRate.setDescription(request.getDescription());
+
+        // 3. Lưu vào database
+        return mortgageInterestRateRepository.save(interestRate);
+    }
+
     // Helper methods
     private void verifyAccountOwnership(Account account) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
