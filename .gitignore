@@ -32,6 +32,10 @@ build/
 ### VS Code ###
 .vscode/
 
+# Sensitive configuration files - DO NOT COMMIT
+src/main/resources/application.properties
+src/main/resources/application-*.properties
+
 # Firebase Admin service account keys - do NOT commit these files
 # Specific credential file used by FirebaseConfig
 src/main/resources/ibanking-mobile-app-firebase-adminsdk-fbsvc-56c5386c82.json
